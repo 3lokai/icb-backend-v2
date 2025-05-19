@@ -94,15 +94,15 @@ def detect(url):
 @cli.command()
 @click.argument("url_or_file")
 @click.option("--force", is_flag=True, help="Force re-scrape even if data exists")
-@click.option("--csv", is_flag=True, help="Input is a CSV file with URLs")
+@click.option("--is-csv", is_flag=True, help="Input is a CSV file with URLs")
 @click.option("--url-col", default="url", help="Column name for URLs in CSV")
 @click.option("--name-col", default="name", help="Column name for roaster names in CSV")
 @click.option("--limit", type=int, help="Limit number of URLs to process from CSV")
 @click.option("--concurrent", type=int, default=1, help="Number of concurrent scraping tasks")
-def scrape_roaster(url_or_file, force, csv, url_col, name_col, limit, concurrent):
+def scrape_roaster(url_or_file, force, is_csv, url_col, name_col, limit, concurrent):
     """Scrape roasters using the Crawl4AI pipeline (async, batch or single)."""
     try:
-        if csv:
+        if is_csv:
             logger.info(f"Scraping roasters from CSV: {url_or_file}")
             import csv as pycsv
             async def run_batch():
@@ -370,7 +370,7 @@ def list_roasters(csv, output):
             click.echo("No roasters found in database.")
             return
         
-        if csv:
+        if is_csv:
             # Output as CSV using standardized exporter
             output = output or "roasters.csv"
             fieldnames = ['id', 'name', 'website_url', 'city', 'state', 'country', 'platform']

@@ -11,8 +11,7 @@ import asyncio
 import csv
 import logging
 from pathlib import Path
-from scrapers.roaster.batch import scrape_roasters_from_csv
-from scrapers.roaster.scraper import RoasterScraper
+from scrapers.roasters_crawl4ai.run import process_csv_batch
 from common.exporter import export_to_csv, export_to_json
 
 # Configure logging
@@ -29,8 +28,8 @@ async def main():
 
     print(f"Starting roaster scraper with input: {args.input}")
 
-    # Process roasters
-    results, errors = await scrape_roasters_from_csv(args.input, args.output, args.limit)
+    # Process roasters using Crawl4AI batch logic
+    results, errors = await process_csv_batch(args.input, args.output, args.limit)
 
     print(f"Scraped {len(results)} roasters, encountered {len(errors)} errors")
 

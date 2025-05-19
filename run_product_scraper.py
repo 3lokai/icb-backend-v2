@@ -4,151 +4,9 @@ Coffee Product Scraper Runner
 Script to run the coffee product scraper for one or more roasters.
 """
 
-import argparse
-import asyncio
-import json
-import logging
-from pathlib import Path
-from datetime import datetime
 import sys
-from common.exporter import export_to_json, export_to_csv
 
-from scrapers.product.scraper import ProductScraper
-from scrapers.product.extractors.validators import validate_coffee_product, apply_validation_corrections
-from scrapers.product.extractors.normalizers import standardize_coffee_model
-
-# Configure logging
-logs_dir = Path("./logs")
-logs_dir.mkdir(exist_ok=True, parents=True)
-log_file = logs_dir / f"product_scraper_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file)
-    ]
-)
-logger = logging.getLogger(__name__)
-
-def load_roasters(file_path: str):
-    """Load roaster data from JSON file."""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            roasters = json.load(f)
-        
-        if isinstance(roasters, dict) and 'roasters' in roasters:
-            # Handle case where roasters are in a nested field
-            roasters = roasters['roasters']
-        
-        if not isinstance(roasters, list):
-            logger.error(f"Invalid roaster data format in {file_path}. Expected a list.")
-            return []
-        
-        return roasters
-    except FileNotFoundError:
-        logger.error(f"Roaster file not found: {file_path}")
-        return []
-    except json.JSONDecodeError:
-        logger.error(f"Invalid JSON in roaster file: {file_path}")
-        return []
-
-def filter_roasters(roasters, platform=None, roaster_id=None, limit=None):
-    """Filter roasters based on criteria."""
-    filtered = roasters
-    
-    if platform:
-        filtered = [r for r in filtered if platform.lower() in r.get('platform', '').lower()]
-        logger.info(f"Filtered to {len(filtered)} roasters with platform '{platform}'")
-    
-    if roaster_id:
-        filtered = [r for r in filtered if r.get('id') == roaster_id or r.get('slug') == roaster_id]
-        logger.info(f"Filtered to {len(filtered)} roasters with ID/slug '{roaster_id}'")
-    
-    if limit is not None and limit > 0:
-        filtered = filtered[:limit]
-        logger.info(f"Limited to {len(filtered)} roasters")
-    
-    return filtered
-
-async def scrape_roasters(args):
-    """Run the product scraper for the specified roasters."""
-    # Load roasters
-    roasters = load_roasters(args.roasters)
-    if not roasters:
-        logger.error("No roasters found or unable to load roasters.")
-        return 1
-
-    # Patch ProductScraper.scrape_to_file to support returning the products for export
-    from functools import wraps
-    orig_scrape_to_file = ProductScraper.scrape_to_file
-    @wraps(orig_scrape_to_file)
-    async def scrape_to_file_with_products(self, roasters, output_file, return_products=False):
-        result = await orig_scrape_to_file(self, roasters, output_file)
-        # Reproduce serialization logic from ProductScraper.scrape_to_file
-        # (should match the actual implementation)
-        all_products = []
-        for roaster in roasters:
-            try:
-                products = await self.scrape_roaster_products(roaster)
-                if products:
-                    all_products.extend(products)
-            except Exception:
-                continue
-        serialized_products = []
-        for coffee in all_products:
-            if hasattr(coffee, 'model_dump'):
-                serialized_products.append(coffee.model_dump())
-            elif hasattr(coffee, 'dict'):
-                serialized_products.append(coffee.dict())
-            else:
-                serialized_products.append(coffee)
-        if return_products:
-            return result[0], result[1], serialized_products
-        return result
-    ProductScraper.scrape_to_file = scrape_to_file_with_products
-
-    
-    # Filter roasters based on args
-    roasters = filter_roasters(
-        roasters, 
-        platform=args.platform,
-        roaster_id=args.roaster_id,
-        limit=args.limit
-    )
-    
-    if not roasters:
-        logger.error("No roasters match the specified criteria.")
-        return 1
-    
-    # Initialize scraper
-    scraper = ProductScraper(
-        force_refresh=args.force_refresh,
-        use_enrichment=not args.no_enrichment,
-        confidence_tracking=not args.no_confidence
-    )
-    
-    # Prepare output path
-    output_path = Path(args.output)
-    output_path.parent.mkdir(exist_ok=True, parents=True)
-    
-    # Run scraper
-    logger.info(f"Starting scraper for {len(roasters)} roasters")
-    total_products, total_roasters, serialized_products = await scraper.scrape_to_file(roasters, args.output, return_products=True)
-
-    # Export products in selected format
-    export_format = getattr(args, 'export_format', 'json')
-    if total_products > 0:
-        if export_format == 'csv':
-            # Use all keys from first product for fieldnames
-            fieldnames = list(serialized_products[0].keys()) if serialized_products else []
-            export_to_csv(serialized_products, str(output_path), fieldnames=fieldnames)
-            logger.info(f"Exported products to CSV: {args.output}")
-        else:
-            export_to_json(serialized_products, str(output_path), indent=2)
-            logger.info(f"Exported products to JSON: {args.output}")
-
+def main():
     # Generate field coverage report if requested
     if args.analyze and total_products > 0:
         coverage_stats = scraper.analyze_field_coverage(serialized_products)
@@ -178,6 +36,10 @@ async def scrape_roasters(args):
     if total_roasters == 0:
         return 1
     return 0
+
+if __name__ == "__main__":
+    import asyncio
+    sys.exit(asyncio.run(main()))
 
 async def scrape_single_url(args):
     """Scrape a single product URL directly."""
@@ -362,4 +224,6 @@ def validate_products(args):
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import asyncio
+    from scrapers.product_crawl4ai.run_product_scraper import main
+    asyncio.run(main())
