@@ -1,0 +1,14 @@
+{
+  "name": "Beans n Brews",
+  "website_url": "https://www.beansnbrews.in/",
+  "slug": "beans-n-brews",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "beansnbrews.in",
+  "platform": "woocommerce",
+  "tags": [
+    "woocommerce"
+  ],
+  "description": "Beans n Brews is a coffee roaster dedicated to providing high-quality, freshly roasted coffee beans and a variety of brews to coffee enthusiasts. They focus on sourcing the best beans and crafting unique blends to deliver an exceptional coffee experience."
+}

@@ -1,0 +1,104 @@
+[
+  {
+    "name": "Robusta Kaapi Royale",
+    "slug": "robusta-kaapi-royale",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/robusta-kaapi-royale/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.6
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success",
+    "bean_type": "robusta",
+    "bean_type_source": "llm",
+    "is_blend": false,
+    "is_blend_source": "llm"
+  },
+  {
+    "name": "Monsoon Malabar",
+    "slug": "monsoon-malabar",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/monsoon-malabar/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.6
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  },
+  {
+    "name": "Ms Estate",
+    "slug": "ms-estate",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/ms-estate/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.85
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  },
+  {
+    "name": "Attikan Estate",
+    "slug": "attikan-estate",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/attikan-estate/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.85
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  },
+  {
+    "name": "Biccode Estate",
+    "slug": "biccode-estate",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/biccode-estate/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.85
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  },
+  {
+    "name": "Harley Estate",
+    "slug": "harley-estate",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/harley-estate/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.85
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  },
+  {
+    "name": "Kalledevarapura Estate",
+    "slug": "kalledevarapura-estate",
+    "roaster_slug": "babas-beans",
+    "description": "",
+    "direct_buy_url": "https://babasbeanscoffee.com/product/kalledevarapura-estate/",
+    "is_single_origin": true,
+    "is_available": false,
+    "confidence_scores": {
+      "is_single_origin": 0.85
+    },
+    "last_scraped_at": null,
+    "scrape_status": "success"
+  }
+]

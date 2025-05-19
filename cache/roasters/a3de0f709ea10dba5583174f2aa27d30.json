@@ -1,0 +1,14 @@
+{
+  "name": "Ainmane",
+  "website_url": "https://ainmane.com",
+  "slug": "ainmane",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "ainmane.com",
+  "platform": "magento",
+  "tags": [
+    "magento"
+  ],
+  "description": "Ainmane is a specialty coffee roaster known for sourcing high-quality beans and crafting unique, flavorful profiles. They focus on sustainable practices and direct trade relationships with farmers."
+}

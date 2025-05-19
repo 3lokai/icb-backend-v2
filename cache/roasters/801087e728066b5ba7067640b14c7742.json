@@ -1,0 +1,32 @@
+{
+  "name": "Baba's Beans",
+  "website_url": "https://babasbeanscoffee.com/",
+  "slug": "babas-beans",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "babasbeanscoffee.com",
+  "platform": "woocommerce",
+  "instagram_handle": "babasbeans",
+  "social_links": [
+    "https://www.instagram.com/babasbeans/",
+    "https://www.facebook.com/babasbeanscoffeebar/",
+    "https://twitter.com/beansbaba",
+    "https://www.linkedin.com/company/baba's-beans/about/"
+  ],
+  "contact_email": "info@babasbeans.com",
+  "contact_phone": "+91 98704 01520",
+  "tags": [
+    "specialty",
+    "organic",
+    "single-origin",
+    "local",
+    "arabica",
+    "robusta",
+    "subscription",
+    "woocommerce"
+  ],
+  "has_subscription": true,
+  "has_physical_store": true,
+  "description": "Baba's Beans is a specialty coffee roaster known for its artisanal approach to roasting high-quality beans, offering a unique and flavorful coffee experience. They emphasize sustainability and direct trade practices to ensure ethical sourcing."
+}

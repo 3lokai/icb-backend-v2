@@ -1,0 +1,192 @@
+[
+  {
+    "name": "Baba's Beans",
+    "website_url": "https://babasbeanscoffee.com/",
+    "slug": "babas-beans",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "babasbeanscoffee.com",
+    "platform": "woocommerce",
+    "instagram_handle": "babasbeans",
+    "social_links": [
+      "https://www.instagram.com/babasbeans/",
+      "https://www.facebook.com/babasbeanscoffeebar/",
+      "https://twitter.com/beansbaba",
+      "https://www.linkedin.com/company/baba's-beans/about/"
+    ],
+    "contact_email": "info@babasbeans.com",
+    "contact_phone": "+91 98704 01520",
+    "tags": [
+      "specialty",
+      "organic",
+      "single-origin",
+      "local",
+      "arabica",
+      "robusta",
+      "subscription",
+      "woocommerce"
+    ],
+    "has_subscription": true,
+    "has_physical_store": true,
+    "description": "Baba's Beans is a specialty coffee roaster known for its artisanal approach to roasting high-quality beans, offering a unique and flavorful coffee experience. They emphasize sustainability and direct trade practices to ensure ethical sourcing."
+  },
+  {
+    "name": "Alchemist",
+    "website_url": "https://alchemistroastery.com",
+    "slug": "alchemist",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "alchemistroastery.com",
+    "platform": "unknown",
+    "description": "Alchemist is a specialty coffee roaster known for its meticulous approach to sourcing and roasting high-quality beans, aiming to transform coffee into an exceptional experience."
+  },
+  {
+    "name": "Ainmane",
+    "website_url": "https://ainmane.com",
+    "slug": "ainmane",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "ainmane.com",
+    "platform": "magento",
+    "tags": [
+      "magento"
+    ],
+    "description": "Ainmane is a specialty coffee roaster known for sourcing high-quality beans and crafting unique, flavorful profiles. They focus on sustainable practices and direct trade relationships with farmers."
+  },
+  {
+    "name": "BaarbaraBerry",
+    "website_url": "https://baarbaracoffee.com/",
+    "slug": "baarbaraberry",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "baarbaracoffee.com",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "specialty",
+      "organic",
+      "local",
+      "arabica",
+      "robusta",
+      "subscription",
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "has_subscription": true,
+    "has_physical_store": true,
+    "description": "Baarbara Coffee is a specialty coffee roaster known for its high-quality beans and unique roasting techniques. The roaster emphasizes sustainability and direct trade relationships with coffee farmers."
+  },
+  {
+    "name": "Araku Coffee",
+    "website_url": "https://www.arakucoffee.in/",
+    "slug": "araku-coffee",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "arakucoffee.in",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "description": "Araku Coffee is a specialty coffee roaster known for its high-quality beans sourced from the Araku Valley in India. They focus on sustainable farming practices and work directly with local tribal farmers to produce unique, flavorful coffees.",
+    "founded_year": 2007,
+    "address": "Araku Coffee, H.No. 1-90, Sangam Junction, Araku Valley, Visakhapatnam District, Andhra Pradesh, India"
+  },
+  {
+    "name": "BiziBean Coffee",
+    "website_url": "https://www.bizibean.com",
+    "slug": "bizibean-coffee",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "bizibean.com",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "description": "BiziBean Coffee is a specialty coffee roaster dedicated to sourcing and roasting high-quality beans to deliver exceptional flavor profiles. They focus on sustainability and direct trade relationships with farmers."
+  },
+  {
+    "name": "Beans n Brews",
+    "website_url": "https://www.beansnbrews.in/",
+    "slug": "beans-n-brews",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "beansnbrews.in",
+    "platform": "woocommerce",
+    "tags": [
+      "woocommerce"
+    ],
+    "description": "Beans n Brews is a coffee roaster dedicated to providing high-quality, freshly roasted coffee beans and a variety of brews to coffee enthusiasts. They focus on sourcing the best beans and crafting unique blends to deliver an exceptional coffee experience."
+  },
+  {
+    "name": "Bili Hu",
+    "website_url": "https://bilihu.in/",
+    "slug": "bili-hu",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "bilihu.in",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "description": "Bili Hu is a specialty coffee roaster known for sourcing high-quality beans and crafting unique roast profiles. Their focus is on delivering exceptional flavor experiences to coffee enthusiasts."
+  },
+  {
+    "name": "Black Baza Coffee",
+    "website_url": "https://store.blackbazacoffee.com/",
+    "slug": "black-baza-coffee",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "store.blackbazacoffee.com",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "specialty",
+      "local",
+      "arabica",
+      "robusta",
+      "subscription",
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "has_subscription": true,
+    "has_physical_store": true,
+    "description": "Black Baza Coffee is a specialty coffee roaster focused on ethically sourced, high-quality beans, often working directly with farmers to promote sustainable practices."
+  },
+  {
+    "name": "Beachville Coffee Roasters",
+    "website_url": "https://beachvillecoffee.com/",
+    "slug": "beachville-coffee-roasters",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "beachvillecoffee.com",
+    "platform": "shopify",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "shopify"
+    ],
+    "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+    "description": "Beachville Coffee Roasters is a specialty coffee roaster dedicated to sourcing and roasting high-quality beans to deliver exceptional flavor profiles. They focus on sustainable practices and direct trade relationships with coffee farmers."
+  }
+]

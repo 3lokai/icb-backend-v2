@@ -1,0 +1,17 @@
+{
+  "name": "Bili Hu",
+  "website_url": "https://bilihu.in/",
+  "slug": "bili-hu",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "bilihu.in",
+  "platform": "shopify",
+  "index": 0,
+  "error": true,
+  "tags": [
+    "shopify"
+  ],
+  "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+  "description": "Bili Hu is a specialty coffee roaster known for sourcing high-quality beans and crafting unique roast profiles. Their focus is on delivering exceptional flavor experiences to coffee enthusiasts."
+}

@@ -1,0 +1,25 @@
+{
+  "name": "BaarbaraBerry",
+  "website_url": "https://baarbaracoffee.com/",
+  "slug": "baarbaraberry",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "baarbaracoffee.com",
+  "platform": "shopify",
+  "index": 0,
+  "error": true,
+  "tags": [
+    "specialty",
+    "organic",
+    "local",
+    "arabica",
+    "robusta",
+    "subscription",
+    "shopify"
+  ],
+  "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+  "has_subscription": true,
+  "has_physical_store": true,
+  "description": "Baarbara Coffee is a specialty coffee roaster known for its high-quality beans and unique roasting techniques. The roaster emphasizes sustainability and direct trade relationships with coffee farmers."
+}

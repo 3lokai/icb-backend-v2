@@ -1,0 +1,80 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.roo
+*.cursor
+*.windsurfrules
+*venv
+.windsurf
+# OS specific
+.DS_Store
+
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.env/
+.env.*
+
+# Test and coverage outputs
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.pytest_cache/
+.cache/
+nosetests.xml
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Miscellaneous
+*.sqlite3
+*.db
+*.log
+*.pot
+*.mo
+*.orig
+*.bak
+*.tmp
+
+# System files
+Thumbs.db
+ehthumbs.db
+
+# IDE/editor files
+*.iml
+
+# Local/project config files
+.roomodes
+.taskmasterconfig
+
+# Task files
+tasks.json
+tasks/

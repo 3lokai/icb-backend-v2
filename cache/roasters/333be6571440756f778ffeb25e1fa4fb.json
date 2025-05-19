@@ -1,0 +1,17 @@
+{
+  "name": "Beachville Coffee Roasters",
+  "website_url": "https://beachvillecoffee.com/",
+  "slug": "beachville-coffee-roasters",
+  "country": "India",
+  "is_active": true,
+  "is_verified": false,
+  "domain": "beachvillecoffee.com",
+  "platform": "shopify",
+  "index": 0,
+  "error": true,
+  "tags": [
+    "shopify"
+  ],
+  "content": "'charmap' codec can't decode byte 0x81 in position 1980: character maps to <undefined>",
+  "description": "Beachville Coffee Roasters is a specialty coffee roaster dedicated to sourcing and roasting high-quality beans to deliver exceptional flavor profiles. They focus on sustainable practices and direct trade relationships with coffee farmers."
+}
