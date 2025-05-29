@@ -17,6 +17,7 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 
 from .schema import CoffeeProductSchema
 from config import config  # Import the main config object
+from common.utils import create_slug # Ensure create_slug is imported
 
 logger = logging.getLogger(__name__)
 
@@ -185,49 +186,78 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
                     # varietals, aroma, altitude_meters are handled separately due to potential type conversion
                 }
                 for schema_key, product_key in new_fields_map.items():
-                    if schema_key in extracted and extracted[schema_key] is not None:
-                        product[product_key] = extracted[schema_key]
+                    if product.get(product_key) is None: # Check if field is currently None
+                        if schema_key in extracted and extracted[schema_key] is not None:
+                            # Type conversion for with_milk_suitable if LLM returns string
+                            if product_key == 'with_milk_suitable' and isinstance(extracted[schema_key], str):
+                                val_lower = extracted[schema_key].lower()
+                                if val_lower in ['true', 'yes', '1', 'suitable']:
+                                    product[product_key] = True
+                                elif val_lower in ['false', 'no', '0', 'unsuitable']:
+                                    product[product_key] = False
+                                else:
+                                    product[product_key] = None # Or log warning
+                            elif product_key == 'with_milk_suitable' and isinstance(extracted[schema_key], int):
+                                product[product_key] = bool(extracted[schema_key]) # Handle 0 or 1
+                            else:
+                                product[product_key] = extracted[schema_key]
 
-                if 'varietals' in extracted and extracted['varietals']:
-                    if isinstance(extracted['varietals'], str):
-                        product['varietals'] = [v.strip() for v in extracted['varietals'].split(',')]
-                    elif isinstance(extracted['varietals'], list):
-                        product['varietals'] = extracted['varietals']
+                # Varietals processing
+                if not product.get('varietals'): # Check if field is None or empty list
+                    if 'varietals' in extracted and extracted['varietals']:
+                        raw_varietals = extracted['varietals']
+                        processed_varietals = []
+                        if isinstance(raw_varietals, str):
+                            processed_varietals = [v.strip() for v in raw_varietals.split(',') if v.strip()]
+                        elif isinstance(raw_varietals, list):
+                            processed_varietals = [str(v).strip() for v in raw_varietals if str(v).strip()]
+                        
+                        if processed_varietals: # Only assign if we got some varietals
+                            product['varietals'] = processed_varietals
+                        elif product.get('varietals') is None : # Ensure it's None if LLM gives empty and was None
+                             product['varietals'] = None
+
+
+                # Aroma processing
+                if product.get('aroma') is None: # Check if field is currently None
+                    if 'aroma' in extracted and extracted['aroma']:
+                        aroma_data = extracted['aroma']
+                        processed_aroma = None
+                        if isinstance(aroma_data, list):
+                            processed_aroma = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
+                        elif isinstance(aroma_data, str):
+                            processed_aroma = aroma_data.strip()
+                        elif aroma_data is not None: # boolean or number from LLM
+                            processed_aroma = str(aroma_data)
+                        
+                        if processed_aroma: # Assign only if there's actual content
+                            product['aroma'] = processed_aroma
+                        # else product['aroma'] remains None
                 
-                if 'aroma' in extracted and extracted['aroma']:
-                    aroma_data = extracted['aroma']
-                    if isinstance(aroma_data, list):
-                        product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
-                    elif isinstance(aroma_data, str):
-                        product['aroma'] = aroma_data.strip()
-                    else:
-                        product['aroma'] = str(aroma_data) # Fallback to string conversion
-                else:
-                    product['aroma'] = None # Ensure it's None if not present
-                
-                if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
-                    alt_val = extracted['altitude_meters']
-                    if isinstance(alt_val, str):
-                        match = re.search(r'^(\d+)', alt_val.strip())
-                        if match:
+                # Altitude_meters processing
+                if product.get('altitude_meters') is None: # Check if field is currently None
+                    if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
+                        alt_val = extracted['altitude_meters']
+                        parsed_alt = None
+                        if isinstance(alt_val, str):
+                            match = re.search(r'^(\d+)', alt_val.strip())
+                            if match:
+                                try:
+                                    parsed_alt = int(match.group(1))
+                                except ValueError:
+                                    logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
+                            else:
+                                logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
+                        elif isinstance(alt_val, int):
+                            parsed_alt = alt_val
+                        else: # Other types
                             try:
-                                product['altitude_meters'] = int(match.group(1))
-                            except ValueError:
-                                logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
-                                product['altitude_meters'] = None
-                        else:
-                            # If no numeric match, but schema allows string, we could keep it as string
-                            # However, DB model wants int. So set to None if not parsable to int.
-                            logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
-                            product['altitude_meters'] = None
-                    elif isinstance(alt_val, int):
-                        product['altitude_meters'] = alt_val
-                    else: # Other types (e.g. float, bool if LLM is weird)
-                        try:
-                            product['altitude_meters'] = int(alt_val)
-                        except (ValueError, TypeError):
-                            logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
-                            product['altitude_meters'] = None
+                                parsed_alt = int(alt_val)
+                            except (ValueError, TypeError):
+                                logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
+                        
+                        if parsed_alt is not None:
+                            product['altitude_meters'] = parsed_alt
                 
                 logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
             else:
@@ -435,7 +465,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                     # Create base product dictionary
                     product = {
                         'name': product_name,
-                        'slug': create_slug_from_name(product_name),
+                        'slug': create_slug(product_name), # Replaced call
                         'roaster_id': roaster_id,
                         'description': extracted.get('description') or extracted_description or "",
                         'direct_buy_url': url,
@@ -487,53 +517,78 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                         elif isinstance(extracted['flavor_notes'], list):
                             product['flavor_profiles'] = extracted['flavor_notes']
                     
-                        # Post-processing for new fields in extract_product_page
+                        # Post-processing for new fields in extract_product_page, applying conditional logic
                         new_fields_map_extract = {
                             'acidity': 'acidity', 'body': 'body', 'sweetness': 'sweetness',
                             'with_milk_suitable': 'with_milk_suitable'
                         }
                         for schema_key, product_key in new_fields_map_extract.items():
-                            if schema_key in extracted and extracted[schema_key] is not None:
-                                product[product_key] = extracted[schema_key]
-
-                        if 'varietals' in extracted and extracted['varietals']:
-                            if isinstance(extracted['varietals'], str):
-                                product['varietals'] = [v.strip() for v in extracted['varietals'].split(',')]
-                            elif isinstance(extracted['varietals'], list):
-                                product['varietals'] = extracted['varietals']
+                            if product.get(product_key) is None: # Check if field is currently None
+                                if schema_key in extracted and extracted[schema_key] is not None:
+                                    if product_key == 'with_milk_suitable' and isinstance(extracted[schema_key], str):
+                                        val_lower = extracted[schema_key].lower()
+                                        if val_lower in ['true', 'yes', '1', 'suitable']:
+                                            product[product_key] = True
+                                        elif val_lower in ['false', 'no', '0', 'unsuitable']:
+                                            product[product_key] = False
+                                        else:
+                                            product[product_key] = None
+                                    elif product_key == 'with_milk_suitable' and isinstance(extracted[schema_key], int):
+                                        product[product_key] = bool(extracted[schema_key])
+                                    else:
+                                        product[product_key] = extracted[schema_key]
                         
-                        if 'aroma' in extracted and extracted['aroma']:
-                            aroma_data = extracted['aroma']
-                            if isinstance(aroma_data, list):
-                                product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
-                            elif isinstance(aroma_data, str):
-                                product['aroma'] = aroma_data.strip()
-                            else:
-                                product['aroma'] = str(aroma_data) # Fallback to string conversion
-                        else:
-                            product['aroma'] = None # Ensure it's None if not present
+                        # Varietals processing
+                        if not product.get('varietals'): # Check if field is None or empty list
+                            if 'varietals' in extracted and extracted['varietals']:
+                                raw_varietals = extracted['varietals']
+                                processed_varietals = []
+                                if isinstance(raw_varietals, str):
+                                    processed_varietals = [v.strip() for v in raw_varietals.split(',') if v.strip()]
+                                elif isinstance(raw_varietals, list):
+                                    processed_varietals = [str(v).strip() for v in raw_varietals if str(v).strip()]
+                                if processed_varietals:
+                                    product['varietals'] = processed_varietals
+                                elif product.get('varietals') is None: # Ensure None if LLM gives empty and was None
+                                    product['varietals'] = None
+                        
+                        # Aroma processing
+                        if product.get('aroma') is None: # Check if field is currently None
+                            if 'aroma' in extracted and extracted['aroma']:
+                                aroma_data = extracted['aroma']
+                                processed_aroma = None
+                                if isinstance(aroma_data, list):
+                                    processed_aroma = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
+                                elif isinstance(aroma_data, str):
+                                    processed_aroma = aroma_data.strip()
+                                elif aroma_data is not None:
+                                    processed_aroma = str(aroma_data)
+                                if processed_aroma:
+                                     product['aroma'] = processed_aroma
 
-                        if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
-                            alt_val = extracted['altitude_meters']
-                            if isinstance(alt_val, str):
-                                match = re.search(r'^(\d+)', alt_val.strip())
-                                if match:
+                        # Altitude_meters processing
+                        if product.get('altitude_meters') is None: # Check if field is currently None
+                            if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
+                                alt_val = extracted['altitude_meters']
+                                parsed_alt = None
+                                if isinstance(alt_val, str):
+                                    match = re.search(r'^(\d+)', alt_val.strip())
+                                    if match:
+                                        try:
+                                            parsed_alt = int(match.group(1))
+                                        except ValueError:
+                                            logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
+                                    else:
+                                        logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
+                                elif isinstance(alt_val, int):
+                                    parsed_alt = alt_val
+                                else: 
                                     try:
-                                        product['altitude_meters'] = int(match.group(1))
-                                    except ValueError:
-                                        logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
-                                        product['altitude_meters'] = None
-                                else:
-                                    logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
-                                    product['altitude_meters'] = None
-                            elif isinstance(alt_val, int):
-                                product['altitude_meters'] = alt_val
-                            else:
-                                try:
-                                    product['altitude_meters'] = int(alt_val)
-                                except (ValueError, TypeError):
-                                    logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
-                                    product['altitude_meters'] = None
+                                        parsed_alt = int(alt_val)
+                                    except (ValueError, TypeError):
+                                        logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
+                                if parsed_alt is not None:
+                                    product['altitude_meters'] = parsed_alt
                                     
                     logger.info(f"Successfully extracted product: {product.get('name', 'Unknown')}")
                     return product
@@ -548,7 +603,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                 
                 return {
                     'name': product_name,
-                    'slug': create_slug_from_name(product_name),
+                    'slug': create_slug(product_name), # Replaced call
                     'roaster_id': roaster_id,
                     'description': extracted_description,
                     'direct_buy_url': url,
@@ -583,13 +638,4 @@ def get_llm_config() -> LLMConfig:
     logger.warning("No LLM API keys found in config. Extraction may fail without a valid API key.")
     return LLMConfig(provider="openai/gpt-4o-mini", api_token="")
 
-def create_slug_from_name(name: str) -> str:
-    """Create a URL-friendly slug from a product name."""
-    if not name:
-        return ""
-    # Replace special characters
-    slug = name.lower()
-    slug = re.sub(r'[^\w\s-]', '', slug)  # Remove non-word chars except spaces and hyphens
-    slug = re.sub(r'[\s_]+', '-', slug)   # Replace whitespace and underscores with hyphens
-    slug = re.sub(r'-+', '-', slug)        # Remove duplicate hyphens
-    return slug.strip('-')                 # Trim hyphens from start and end
+# Removed local create_slug_from_name function
