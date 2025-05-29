@@ -115,6 +115,14 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
             7. Origin region or country
             8. Whether it's single origin or a blend
             9. Flavor notes (tasting notes, flavor profile)
+            Additionally, try to find:
+            10. Acidity: The perceived acidity (e.g., bright, mellow, low).
+            11. Body: The mouthfeel (e.g., light, medium, full, syrupy).
+            12. Sweetness: The perceived sweetness (e.g., honey-like, caramel).
+            13. Aroma: The fragrance (e.g., floral, nutty, spicy). This can be a list or a comma-separated string.
+            14. Suitability with Milk: Is it recommended for milk (true/false)?
+            15. Varietals: Specific coffee varietals (e.g., Typica, Bourbon) as a list or comma-separated string.
+            16. Altitude in Meters: Growing altitude (e.g., 1500, '1200-1800masl').
             For price, extract the main/default price option.
             For package size, look for weight in grams (typically 250g, 1kg, etc.).
             Only include information you find on the page - don't guess missing values.
@@ -162,6 +170,57 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
                     # If already a list, use directly
                     elif isinstance(extracted['flavor_notes'], list):
                         product['flavor_profiles'] = extracted['flavor_notes']
+
+                # Post-processing for new fields
+                new_fields_map = {
+                    'acidity': 'acidity', 'body': 'body', 'sweetness': 'sweetness',
+                    'with_milk_suitable': 'with_milk_suitable'
+                    # varietals, aroma, altitude_meters are handled separately due to potential type conversion
+                }
+                for schema_key, product_key in new_fields_map.items():
+                    if schema_key in extracted and extracted[schema_key] is not None:
+                        product[product_key] = extracted[schema_key]
+
+                if 'varietals' in extracted and extracted['varietals']:
+                    if isinstance(extracted['varietals'], str):
+                        product['varietals'] = [v.strip() for v in extracted['varietals'].split(',')]
+                    elif isinstance(extracted['varietals'], list):
+                        product['varietals'] = extracted['varietals']
+                
+                if 'aroma' in extracted and extracted['aroma']:
+                    aroma_data = extracted['aroma']
+                    if isinstance(aroma_data, list):
+                        product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
+                    elif isinstance(aroma_data, str):
+                        product['aroma'] = aroma_data.strip()
+                    else:
+                        product['aroma'] = str(aroma_data) # Fallback to string conversion
+                else:
+                    product['aroma'] = None # Ensure it's None if not present
+                
+                if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
+                    alt_val = extracted['altitude_meters']
+                    if isinstance(alt_val, str):
+                        match = re.search(r'^(\d+)', alt_val.strip())
+                        if match:
+                            try:
+                                product['altitude_meters'] = int(match.group(1))
+                            except ValueError:
+                                logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
+                                product['altitude_meters'] = None
+                        else:
+                            # If no numeric match, but schema allows string, we could keep it as string
+                            # However, DB model wants int. So set to None if not parsable to int.
+                            logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
+                            product['altitude_meters'] = None
+                    elif isinstance(alt_val, int):
+                        product['altitude_meters'] = alt_val
+                    else: # Other types (e.g. float, bool if LLM is weird)
+                        try:
+                            product['altitude_meters'] = int(alt_val)
+                        except (ValueError, TypeError):
+                            logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
+                            product['altitude_meters'] = None
                 
                 logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
             else:
@@ -251,6 +310,13 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
             7. Origin region or country
             8. Whether it's single origin or a blend
             9. Flavor notes (tasting notes, flavor profile)
+            10. Acidity: The perceived acidity (e.g., bright, mellow, low).
+            11. Body: The mouthfeel (e.g., light, medium, full, syrupy).
+            12. Sweetness: The perceived sweetness (e.g., honey-like, caramel).
+            13. Aroma: The fragrance (e.g., floral, nutty, spicy). This can be a list or a comma-separated string.
+            14. Suitability with Milk: Is it recommended for milk (true/false)?
+            15. Varietals: Specific coffee varietals (e.g., Typica, Bourbon) as a list or comma-separated string.
+            16. Altitude in Meters: Growing altitude (e.g., 1500, '1200-1800masl').
             
             For price, extract the main/default price option.
             For package size, look for weight in grams (typically 250g, 1kg, etc.).
@@ -414,6 +480,54 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                         elif isinstance(extracted['flavor_notes'], list):
                             product['flavor_profiles'] = extracted['flavor_notes']
                     
+                        # Post-processing for new fields in extract_product_page
+                        new_fields_map_extract = {
+                            'acidity': 'acidity', 'body': 'body', 'sweetness': 'sweetness',
+                            'with_milk_suitable': 'with_milk_suitable'
+                        }
+                        for schema_key, product_key in new_fields_map_extract.items():
+                            if schema_key in extracted and extracted[schema_key] is not None:
+                                product[product_key] = extracted[schema_key]
+
+                        if 'varietals' in extracted and extracted['varietals']:
+                            if isinstance(extracted['varietals'], str):
+                                product['varietals'] = [v.strip() for v in extracted['varietals'].split(',')]
+                            elif isinstance(extracted['varietals'], list):
+                                product['varietals'] = extracted['varietals']
+                        
+                        if 'aroma' in extracted and extracted['aroma']:
+                            aroma_data = extracted['aroma']
+                            if isinstance(aroma_data, list):
+                                product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in aroma_data]))
+                            elif isinstance(aroma_data, str):
+                                product['aroma'] = aroma_data.strip()
+                            else:
+                                product['aroma'] = str(aroma_data) # Fallback to string conversion
+                        else:
+                            product['aroma'] = None # Ensure it's None if not present
+
+                        if 'altitude_meters' in extracted and extracted['altitude_meters'] is not None:
+                            alt_val = extracted['altitude_meters']
+                            if isinstance(alt_val, str):
+                                match = re.search(r'^(\d+)', alt_val.strip())
+                                if match:
+                                    try:
+                                        product['altitude_meters'] = int(match.group(1))
+                                    except ValueError:
+                                        logger.warning(f"Could not convert altitude_meters '{match.group(1)}' to int for {product.get('name')}")
+                                        product['altitude_meters'] = None
+                                else:
+                                    logger.warning(f"Could not parse altitude_meters string '{alt_val}' for {product.get('name')}")
+                                    product['altitude_meters'] = None
+                            elif isinstance(alt_val, int):
+                                product['altitude_meters'] = alt_val
+                            else:
+                                try:
+                                    product['altitude_meters'] = int(alt_val)
+                                except (ValueError, TypeError):
+                                    logger.warning(f"Could not convert altitude_meters type '{type(alt_val)}' to int for {product.get('name')}")
+                                    product['altitude_meters'] = None
+                                    
                     logger.info(f"Successfully extracted product: {product.get('name', 'Unknown')}")
                     return product
                 except json.JSONDecodeError as e:

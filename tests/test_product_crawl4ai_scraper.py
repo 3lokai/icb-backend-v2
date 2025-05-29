@@ -16,13 +16,47 @@ RAW_PRODUCT_1 = {
     "description": "A test coffee.",
     "product_type": "Coffee",
     "direct_buy_url": f"{SAMPLE_URL}/product-a"
+    # RAW_PRODUCT_1 intentionally does not contain the new fields,
+    # as they are expected to be added during enrichment.
 }
-ENRICHED_PRODUCT_1 = {**RAW_PRODUCT_1, "origin": "Test Origin", "tasting_notes": "Test notes"}
-CACHED_PRODUCT_1_DICT = {**ENRICHED_PRODUCT_1, "id": "coffee_A_id"} # Example of what might be in cache
+
+ENRICHED_PRODUCT_1 = {
+    **RAW_PRODUCT_1,
+    "origin": "Test Origin", # Existing field from previous version of tests
+    "tasting_notes": "Test notes", # Existing field
+    # New fields for enrichment
+    "acidity": "Bright",
+    "body": "Medium",
+    "sweetness": "Caramel",
+    "aroma": "Floral, Nutty", # Kept as string for db.models.Coffee
+    "with_milk_suitable": True,
+    "varietals": ["Typica", "Bourbon"],
+    "altitude_meters": 1500,
+    # Ensure flavor_profiles is also handled if it's part of enrichment schema
+    "flavor_profiles": ["Chocolate", "Fruity"] # Added to be consistent with enrichment
+}
+
+CACHED_PRODUCT_1_DICT = {
+    **ENRICHED_PRODUCT_1, # Includes all new fields from ENRICHED_PRODUCT_1
+    "id": "coffee_A_id",
+    # aroma in cache should also be string
+}
 
 # This can be a real Coffee model instance or a MagicMock
 MOCKED_COFFEE_MODEL_1 = MagicMock(spec=Coffee)
-MOCKED_COFFEE_MODEL_1.name = ENRICHED_PRODUCT_1["name"] # or RAW_PRODUCT_1 if not enriched
+# Update attributes on the mock model to reflect new fields for assertions if needed
+MOCKED_COFFEE_MODEL_1.name = ENRICHED_PRODUCT_1["name"]
+MOCKED_COFFEE_MODEL_1.acidity = ENRICHED_PRODUCT_1["acidity"]
+MOCKED_COFFEE_MODEL_1.body = ENRICHED_PRODUCT_1["body"]
+MOCKED_COFFEE_MODEL_1.sweetness = ENRICHED_PRODUCT_1["sweetness"]
+MOCKED_COFFEE_MODEL_1.aroma = ENRICHED_PRODUCT_1["aroma"]
+MOCKED_COFFEE_MODEL_1.with_milk_suitable = ENRICHED_PRODUCT_1["with_milk_suitable"]
+MOCKED_COFFEE_MODEL_1.varietals = ENRICHED_PRODUCT_1["varietals"]
+MOCKED_COFFEE_MODEL_1.altitude_meters = ENRICHED_PRODUCT_1["altitude_meters"]
+MOCKED_COFFEE_MODEL_1.flavor_profiles = ENRICHED_PRODUCT_1["flavor_profiles"]
+# ... and other fields from RAW_PRODUCT_1 and ENRICHED_PRODUCT_1's older fields
+MOCKED_COFFEE_MODEL_1.origin = ENRICHED_PRODUCT_1["origin"]
+MOCKED_COFFEE_MODEL_1.tasting_notes = ENRICHED_PRODUCT_1["tasting_notes"]
 
 
 @pytest.fixture
@@ -134,7 +168,7 @@ async def test_default_behavior_cache_miss(
     mock_discover_crawl4ai.assert_called_once_with(SAMPLE_URL, SAMPLE_ROASTER_ID, SAMPLE_ROASTER_NAME)
     mock_enrich.assert_called_once_with(RAW_PRODUCT_1, SAMPLE_ROASTER_NAME)
     mock_is_coffee.assert_called_once() # Called with RAW_PRODUCT_1 details
-    mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1)
+    mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1) # ENRICHED_PRODUCT_1 now has new fields
     mock_dict_to_pydantic.assert_called_once_with(ENRICHED_PRODUCT_1, Coffee, preprocessor=preprocess_coffee_data)
     mock_cache_products.assert_called_once()
 
@@ -191,7 +225,7 @@ async def test_force_refresh_bypasses_cache_and_enriches(
     scraper_instance.platform_detector.detect.assert_called_once_with(SAMPLE_URL)
     mock_discover_crawl4ai.assert_called_once_with(SAMPLE_URL, SAMPLE_ROASTER_ID, SAMPLE_ROASTER_NAME)
     mock_enrich.assert_called_once_with(RAW_PRODUCT_1, SAMPLE_ROASTER_NAME)
-    mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1)
+    mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1) # ENRICHED_PRODUCT_1 now has new fields
     mock_dict_to_pydantic.assert_called_once_with(ENRICHED_PRODUCT_1, Coffee, preprocessor=preprocess_coffee_data)
     mock_cache_products.assert_called_once() # New data is cached
 
@@ -220,9 +254,25 @@ async def test_use_enrichment_false_skips_enrichment_call(
 
     mock_is_coffee.assert_called_once() # Still called
     # validate_enriched_product is called with the raw product data in this case
-    mock_validate.assert_called_once_with(RAW_PRODUCT_1) 
+    # RAW_PRODUCT_1 does not have the new fields, so they won't be in this call
+    mock_validate.assert_called_once_with(RAW_PRODUCT_1)
     # dict_to_pydantic_model is called with the raw product data
-    mock_dict_to_pydantic.assert_called_once_with(RAW_PRODUCT_1, Coffee, preprocessor=preprocess_coffee_data)
+    # The new fields should be absent or None if not in RAW_PRODUCT_1
+    expected_data_for_pydantic = {
+        **RAW_PRODUCT_1,
+        # New fields should default to None or be absent if not in RAW_PRODUCT_1
+        # and enrichment is skipped.
+        # Depending on how dict_to_pydantic_model and Coffee model defaults work,
+        # they might appear as None.
+        # For this assertion, we expect exactly RAW_PRODUCT_1's content.
+        # If Coffee model adds them as None by default, this assertion is fine.
+        # If the `product_dict` passed to `validate_enriched_product` and then
+        # `dict_to_pydantic_model` has them explicitly set to None, that's also fine.
+        # The `product_dict` in `scraper.py` starts as `model_to_dict(product)`
+        # and then `enriched_product_data = product_dict` if enrichment is skipped.
+        # So `RAW_PRODUCT_1` is what's expected here.
+    }
+    mock_dict_to_pydantic.assert_called_once_with(expected_data_for_pydantic, Coffee, preprocessor=preprocess_coffee_data)
     mock_cache_products.assert_called_once()
 
 
@@ -381,8 +431,13 @@ async def test_force_refresh_with_use_enrichment_false(
     scraper_instance.platform_detector.detect.assert_called_once_with(SAMPLE_URL)
     mock_discover_crawl4ai.assert_called_once_with(SAMPLE_URL, SAMPLE_ROASTER_ID, SAMPLE_ROASTER_NAME)
     mock_enrich.assert_not_called() # Enrichment disabled
-    mock_validate.assert_called_once_with(RAW_PRODUCT_1) # Validated with raw data
-    mock_dict_to_pydantic.assert_called_once_with(RAW_PRODUCT_1, Coffee, preprocessor=preprocess_coffee_data)
+    mock_validate.assert_called_once_with(RAW_PRODUCT_1) # Validated with raw data (no new fields)
+    
+    # Similar to test_use_enrichment_false_skips_enrichment_call
+    expected_data_for_pydantic_force_refresh_no_enrich = {
+        **RAW_PRODUCT_1
+    }
+    mock_dict_to_pydantic.assert_called_once_with(expected_data_for_pydantic_force_refresh_no_enrich, Coffee, preprocessor=preprocess_coffee_data)
     mock_cache_products.assert_called_once()
 
 # Ensure logs are not excessively noisy during tests
