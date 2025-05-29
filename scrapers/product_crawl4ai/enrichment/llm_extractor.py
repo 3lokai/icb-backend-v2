@@ -37,9 +37,16 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
         return product
     
     # Check which fields are missing
+    potential_enrichment_fields = [
+        'roast_level', 'bean_type', 'processing_method', 'region_name', 'flavor_profiles',
+        'acidity', 'body', 'sweetness', 'aroma', 
+        'with_milk_suitable', 'varietals', 'altitude_meters'
+    ]
     missing_fields = []
-    for field in ['roast_level', 'bean_type', 'processing_method', 'region_name', 'flavor_profiles']:
-        if not product.get(field):
+    for field in potential_enrichment_fields:
+        # Consider a field missing if it's None or an empty list (for list types like varietals, flavor_profiles)
+        value = product.get(field)
+        if value is None or (isinstance(value, list) and not value):
             missing_fields.append(field)
     
     # Skip if no fields need enrichment
