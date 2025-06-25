@@ -133,6 +133,13 @@ class Coffee(BaseDBModel):
     tags: Optional[List[str]] = None
     deepseek_enriched: bool = False
     price_250g: Optional[float] = None
+    acidity: Optional[str] = None
+    body: Optional[str] = None
+    sweetness: Optional[str] = None
+    aroma: Optional[str] = None
+    with_milk_suitable: Optional[bool] = None
+    varietals: Optional[List[str]] = None
+    altitude_meters: Optional[int] = None
     
     # Related data (not stored directly in the table)
     prices: Optional[List[CoffeePrice]] = None

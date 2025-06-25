@@ -67,12 +67,47 @@ class CoffeeProductSchema(BaseModel):
         description="Recommended brewing methods for this coffee (e.g., espresso, filter, french press, pour over)"
     )
     
-    altitude: Optional[str] = Field(
-        None,
-        description="The altitude at which the coffee was grown, if specified"
-    )
+    # altitude: Optional[str] = Field( # This field is replaced by altitude_meters
+    #     None,
+    #     description="The altitude at which the coffee was grown, if specified"
+    # )
     
     harvest_period: Optional[str] = Field(
         None,
         description="When the coffee was harvested or the harvest season"
+    )
+    
+    acidity: Optional[str] = Field(
+        None, 
+        description="The perceived acidity of the coffee (e.g., bright, mellow, sharp, low). Often described with fruit analogies like 'citrus acidity'."
+    )
+    
+    body: Optional[str] = Field(
+        None, 
+        description="The body or mouthfeel of the coffee (e.g., light, medium, full, syrupy, tea-like)."
+    )
+    
+    sweetness: Optional[str] = Field(
+        None, 
+        description="The perceived sweetness of the coffee (e.g., honey-like, caramel, brown sugar, low)."
+    )
+    
+    aroma: Optional[Union[str, List[str]]] = Field(
+        None, 
+        description="The aroma or fragrance of the coffee (e.g., floral, nutty, spicy, chocolaty). Can be a list or a comma-separated string."
+    )
+    
+    with_milk_suitable: Optional[bool] = Field(
+        None, 
+        description="Whether the coffee is particularly recommended for or suitable with milk (true or false)."
+    )
+    
+    varietals: Optional[List[str]] = Field(
+        None, 
+        description="Specific coffee varietals used, if listed (e.g., Typica, Bourbon, Geisha, SL28, Caturra). Provide as a list of strings."
+    )
+    
+    altitude_meters: Optional[Union[int, str]] = Field(
+        None, 
+        description="The altitude in meters at which the coffee was grown (e.g., 1500, '1200-1800masl'). Extract the numerical value or range if possible."
     )

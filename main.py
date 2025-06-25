@@ -14,12 +14,14 @@ from common.exporter import export_to_csv, export_to_json
 from loguru import logger
 import asyncio
 import tqdm
+from urllib.parse import urlparse
 
 # Import project components
 from scrapers.roasters_crawl4ai.crawler import RoasterCrawler as RoasterScraper
 from scrapers.product_crawl4ai.scraper import ProductScraper
 from db.supabase import supabase
 from common.platform_detector import PlatformDetector
+from common.utils import create_slug
 
 def detect_platform(url):
     """Synchronous helper to detect platform using PlatformDetector class for CLI compatibility."""
@@ -182,21 +184,27 @@ def scrape_roaster(url_or_file, force, is_csv, url_col, name_col, limit, concurr
 @cli.command()
 @click.argument("url_or_file")
 @click.option("--force", is_flag=True, help="Force re-scrape even if data exists")
-@click.option("--enrich", is_flag=True, help="Use LLM to enrich missing data")
+@click.option("--force", is_flag=True, help="Force re-scrape even if data exists") # Keep this, it's used in the new logic
+@click.option("--enrich", is_flag=True, help="Use LLM to enrich missing data") # Keep this
 @click.option("--is-csv", is_flag=True, help="Input is a CSV file with URLs")
 @click.option("--url-col", default="url", help="Column name for URLs in CSV")
+@click.option("--name-col", default="name", help="Column name for roaster names in CSV") # Added
+@click.option("--id-col", default="id", help="Column name for roaster IDs in CSV") # Added
 @click.option("--limit", type=int, help="Limit number of URLs to process from CSV")
 @click.option("--concurrent", type=int, default=1, help="Number of concurrent scraping tasks")
-def scrape_products(url_or_file, force, enrich, is_csv, url_col, limit, concurrent):
+def scrape_products(url_or_file, force, enrich, is_csv, url_col, name_col, id_col, limit, concurrent): # Added name_col, id_col
     """Scrape coffee products from the given URL or CSV file with URLs."""
+    scraper = ProductScraper() # Instantiate ProductScraper here
     try:
         if is_csv:
             logger.info(f"Scraping products from CSV: {url_or_file}")
 
             # Parse CSV
-            urls = []
+            items_to_scrape = [] # Changed from urls to items_to_scrape
             with open(url_or_file, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
+                # Ensure we are using the python csv module, not click.types.Path
+                import csv as pycsv 
+                reader = pycsv.DictReader(f)
                 if not reader.fieldnames:
                     logger.error(f"CSV file {url_or_file} is empty or has no header row.")
                     click.echo(f"Error: CSV file {url_or_file} is empty or has no header row.")
@@ -208,95 +216,118 @@ def scrape_products(url_or_file, force, enrich, is_csv, url_col, limit, concurre
                     return
                 
                 for row in reader:
-                    url = row[url_col].strip()
+                    url = row.get(url_col, '').strip()
                     if url:
-                        urls.append(url)
+                        items_to_scrape.append({
+                            'url': url, 
+                            'name': row.get(name_col, '').strip(), 
+                            'id': row.get(id_col, '').strip()
+                        })
 
             if limit and limit > 0:
-                urls = urls[:limit]
+                items_to_scrape = items_to_scrape[:limit]
 
-            logger.info(f"Found {len(urls)} URLs in CSV file")
+            logger.info(f"Found {len(items_to_scrape)} items in CSV file")
 
             # Define async scraping function
             async def scrape_all():
                 semaphore = asyncio.Semaphore(concurrent)
                 all_results = []
 
-                async def scrape_with_semaphore(url):
+                async def scrape_with_semaphore(item): # Signature updated
                     async with semaphore:
                         try:
-                            # Instantiate ProductScraper
-                            scraper = ProductScraper(force_refresh=force, use_enrichment=enrich)
+                            url = item['url']
+                            roaster_name = item['name']
+                            roaster_id = item['id']
+                            
+                            if not roaster_name and url: # If name is missing, try to derive from URL or use domain
+                                parsed_url_item = urlparse(url)
+                                domain_parts = parsed_url_item.netloc.split('.')
+                                roaster_name = domain_parts[-2] if len(domain_parts) >= 2 else parsed_url_item.netloc
+                            
+                            if not roaster_id and roaster_name: # If ID is missing but name is present
+                                roaster_id = create_slug(roaster_name)
+                            elif not roaster_id and not roaster_name: # Both missing, critical issue
+                                logger.error(f"Skipping URL {url} due to missing roaster name and ID in CSV or derivation failed.")
+                                return []
 
-                            # Determine platform - not needed as scraper handles it
-                            # platform = await detect_platform(url)
-
-                            # Scrape products using ProductScraper
-                            roaster = {'website_url': url}  # Minimal roaster info
-                            results = await scraper.scrape_roaster_products(roaster)
-
-                            # Return the results
+                            logger.info(f"Preparing to scrape products for {roaster_name} (ID: {roaster_id}) from {url}")
+                            results = await scraper.scrape_products(
+                                roaster_id=roaster_id, 
+                                url=url, 
+                                roaster_name=roaster_name, 
+                                force_refresh=force, 
+                                use_enrichment=enrich
+                            )
                             return results
                         except Exception as e:
-                            logger.error(f"Failed to scrape products from {url}: {e}")
+                            logger.error(f"Failed to scrape products from {item.get('url', 'unknown URL')}: {e}")
                             return []
 
                 # Start all tasks
-                tasks = [scrape_with_semaphore(url) for url in urls]
+                tasks = [scrape_with_semaphore(item) for item in items_to_scrape] # Updated loop
 
                 # Process with progress bar
                 for task in tqdm.tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Scraping products"):
                     results = await task
                     all_results.extend(results)
-                    for coffee in results:
-                        supabase.upsert_coffee(coffee)
+                    for coffee in results: # Assuming results is a list of Coffee objects
+                        supabase.upsert_coffee(coffee) # supabase expects a Coffee model or dict
 
                 return all_results
 
             # Run async scraping in a safe way
+            # This logic for running asyncio seems fine, no changes needed here for now.
             if asyncio.get_event_loop().is_running():
-                # We're already in an event loop
                 async def run_in_current_loop():
                     return await scrape_all()
                 results = asyncio.create_task(run_in_current_loop())
-                # Wait for the task to complete
                 while not results.done():
-                    pass
+                    pass # Minimal busy wait, consider asyncio.wait for better control
                 results = results.result()
             else:
-                # No event loop running, create a new one
                 results = asyncio.run(scrape_all())
 
             # Report results
-            click.echo(f"Successfully scraped {len(results)} coffee products from {len(urls)} URLs")
+            click.echo(f"Successfully scraped {len(results)} coffee products from {len(items_to_scrape)} URLs")
 
-        else:
+        else: # Single URL processing
             logger.info(f"Scraping products from single URL: {url_or_file}")
 
-            # Wrap the async code in a function we can run safely
             async def process_single_url():
-                # Instantiate ProductScraper
-                scraper = ProductScraper(force_refresh=force, use_enrichment=enrich)
+                parsed_url_single = urlparse(url_or_file)
+                domain_parts = parsed_url_single.netloc.split('.')
+                # Simplified name derivation
+                roaster_name = domain_parts[-2] if len(domain_parts) >= 2 else parsed_url_single.netloc
+                roaster_id = create_slug(roaster_name) # Simplified ID
 
-                # Determine platform - not needed as scraper handles it
-                # platform = await detect_platform(url_or_file)
-                # logger.info(f"Detected platform: {platform}")
-
-                # Scrape products using ProductScraper
-                roaster = {'website_url': url_or_file}  # Minimal roaster info
-                results = await scraper.scrape_roaster_products(roaster)
+                logger.info(f"Preparing to scrape products for {roaster_name} (ID: {roaster_id}) from {url_or_file}")
+                results = await scraper.scrape_products(
+                    roaster_id=roaster_id, 
+                    url=url_or_file, 
+                    roaster_name=roaster_name, 
+                    force_refresh=force, 
+                    use_enrichment=enrich
+                )
 
                 click.echo(f"Successfully scraped {len(results)} coffee products")
-                for coffee in results:
-                    supabase.upsert_coffee(coffee)
-                    click.echo(f"- {coffee.name}")
-
+                for coffee in results: # Assuming results is a list of Coffee objects
+                    supabase.upsert_coffee(coffee) # supabase expects a Coffee model or dict
+                    click.echo(f"- {coffee.name if hasattr(coffee, 'name') else 'Unknown Product'}")
                 return results
 
-            # Run the async function in a safe way
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            asyncio.run(process_single_url())
+            # Run the async function
+            # This logic for running asyncio seems fine.
+            if asyncio.get_event_loop().is_running():
+                async def run_in_current_loop():
+                    return await process_single_url()
+                results = asyncio.create_task(run_in_current_loop())
+                while not results.done():
+                    pass # Minimal busy wait
+                results = results.result()
+            else:
+                results = asyncio.run(process_single_url())
 
     except Exception as e:
         logger.error(f"Product scraping failed: {e}")
@@ -480,20 +511,17 @@ def scrape_db_roasters(roaster_id, limit, force, enrich, concurrent, active_only
 
                         logger.info(f"Scraping products for {roaster.name} ({roaster.website_url})")
 
-                        # Instantiate ProductScraper
-                        scraper = ProductScraper(force_refresh=force, use_enrichment=enrich)
-
-                        # Convert to dictionary for scraper
-                        roaster_dict = {
-                            'id': roaster.id,
-                            'name': roaster.name,
-                            'website_url': str(roaster.website_url),  # Convert HttpUrl to string
-                            'slug': roaster.slug
-                        }
+                        # Instantiate ProductScraper - moved outside the loop
+                        # scraper = ProductScraper() # Instantiated at the start of scrape_db_roasters
 
                         # Scrape products
-                        results = await scraper.scrape_roaster_products(roaster_dict)
-
+                        results = await scraper.scrape_products(
+                            roaster_id=roaster.id,
+                            url=str(roaster.website_url), # Ensure URL is string
+                            roaster_name=roaster.name,
+                            force_refresh=force,
+                            use_enrichment=enrich
+                        )
                         logger.info(f"Found {len(results)} products for {roaster.name}")
 
                         # Upsert to database
