@@ -14,6 +14,50 @@ from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
 
 logger = logging.getLogger(__name__)
 
+def _parse_altitude_string(value_str: Any) -> Optional[int]:
+    if isinstance(value_str, int):
+        return value_str
+    if not isinstance(value_str, str):
+        return None
+    match = re.search(r'^(\d+)', value_str.strip())
+    if match:
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
+    return None
+
+def _extract_attributes_from_tags(tags: List[str]) -> Dict[str, Any]:
+    """Extracts attributes from tags based on key:value patterns."""
+    extracted_attrs = {}
+    if not tags:
+        return extracted_attrs
+
+    possible_keys_map = {
+        'acidity': ['acidity', 'acid level'],
+        'body': ['body', 'mouthfeel'],
+        'sweetness': ['sweetness', 'sweetness level'],
+        'aroma': ['aroma', 'fragrance', 'scent'],
+        'with_milk_suitable': ['milk suitable', 'with milk', 'suitable for milk'],
+        'varietals': ['varietal', 'varietals', 'cultivar', 'bean varietals'],
+        'altitude_meters': ['altitude', 'elevation', 'altitude meters', 'masl', 'grown at']
+    }
+
+    for tag in tags:
+        for field_name, keys in possible_keys_map.items():
+            if field_name in extracted_attrs: # Already found a value for this field
+                continue
+            for key in keys:
+                # Try to match "key: value" or "key : value"
+                match = re.match(rf"{re.escape(key)}\s*:\s*(.+)", tag, re.IGNORECASE)
+                if match:
+                    extracted_attrs[field_name] = match.group(1).strip()
+                    break # Move to the next field_name once a key is matched for it
+            if field_name in extracted_attrs:
+                 continue # Move to next tag if field_name was populated by inner loop
+
+    return extracted_attrs
+
 async def extract_products_woocommerce(base_url: str, roaster_id: str, product_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Extract coffee products from a WooCommerce store using the WP REST API.
@@ -194,6 +238,13 @@ def standardize_woocommerce_product(woo_product: Dict[str, Any], base_url: str, 
         'region_id': None,  # Will be set later if region is known
         'is_single_origin': None,
         'is_seasonal': None,
+        'acidity': None,
+        'body': None,
+        'sweetness': None,
+        'aroma': None,
+        'with_milk_suitable': None,
+        'varietals': None,
+        'altitude_meters': None,
         'product_type': woo_product.get('type', woo_product.get('product_type', '')),
         'tags': _process_tags(woo_product.get('tags', [])),
         'prices': [],
@@ -267,6 +318,38 @@ def standardize_woocommerce_product(woo_product: Dict[str, Any], base_url: str, 
                     product['processing_method'] = standardize_processing_method(attr_value)
                 elif any(term in attr_name for term in ['origin', 'region', 'country']):
                     product['region_name'] = attr_value
+                elif any(term in attr_name for term in ['acidity', 'acid_level', 'acidity level']):
+                    product['acidity'] = attr_value
+                elif any(term in attr_name for term in ['body', 'mouthfeel', 'texture']):
+                    product['body'] = attr_value
+                elif any(term in attr_name for term in ['sweetness', 'sweetness level']):
+                    product['sweetness'] = attr_value
+                elif any(term in attr_name for term in ['aroma', 'fragrance', 'scent']):
+                    if isinstance(attr_value, list):
+                        product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in attr_value]))
+                    elif isinstance(attr_value, str):
+                        product['aroma'] = attr_value.strip()
+                    elif attr_value is not None:
+                        product['aroma'] = str(attr_value)
+                elif any(term in attr_name for term in ['milk', 'with milk', 'milk suitable']):
+                    if isinstance(attr_value, str):
+                        product['with_milk_suitable'] = attr_value.lower() in ['true', 'yes', '1', 'suitable']
+                    elif isinstance(attr_value, bool):
+                        product['with_milk_suitable'] = attr_value
+                    elif isinstance(attr_value, int):
+                        product['with_milk_suitable'] = bool(attr_value)
+                elif any(term in attr_name for term in ['varietal', 'varietals', 'cultivar', 'bean varietals']):
+                    options = attr.get('options', []) # Prefer 'options' list if available
+                    if options and isinstance(options, list):
+                        product['varietals'] = [str(opt).strip() for opt in options if str(opt).strip()]
+                    elif isinstance(attr_value, str):
+                        product['varietals'] = [v.strip() for v in attr_value.split(',') if v.strip()]
+                    elif isinstance(attr_value, list): 
+                        product['varietals'] = [str(v).strip() for v in attr_value if str(v).strip()]
+                    elif attr_value is not None: 
+                         product['varietals'] = [str(attr_value).strip()]
+                elif any(term in attr_name for term in ['altitude', 'elevation', 'grown at', 'masl']):
+                    product['altitude_meters'] = _parse_altitude_string(attr_value)
                 # Extract flavor notes
                 elif any(term in attr_name for term in ['flavor', 'flavour', 'tasting notes', 'notes']):
                     # Split by commas or similar delimiters
@@ -288,18 +371,95 @@ def standardize_woocommerce_product(woo_product: Dict[str, Any], base_url: str, 
                 # Check for single origin indicator
                 elif 'single origin' in attr_name.lower():
                     product['is_single_origin'] = attr_value.lower() not in ('no', 'false', '0')
+
+    # Process meta_data for any missing fields
+    if 'meta_data' in woo_product and isinstance(woo_product['meta_data'], list):
+        for meta_item in woo_product['meta_data']:
+            meta_key = meta_item.get('key', '').lower()
+            meta_value = meta_item.get('value')
+
+            if product.get('acidity') is None and any(k in meta_key for k in ['_acidity', 'coffee_acidity', 'acidity_level', 'acidity_rating', 'acf_acidity']):
+                product['acidity'] = str(meta_value).strip() if meta_value is not None else None
+            if product.get('body') is None and any(k in meta_key for k in ['_body', 'coffee_body', 'mouthfeel', 'texture', 'acf_body']):
+                product['body'] = str(meta_value).strip() if meta_value is not None else None
+            if product.get('sweetness') is None and any(k in meta_key for k in ['_sweetness', 'coffee_sweetness', 'sweetness_level', 'acf_sweetness']):
+                product['sweetness'] = str(meta_value).strip() if meta_value is not None else None
+            if product.get('aroma') is None and any(k in meta_key for k in ['_aroma', 'coffee_aroma', 'fragrance', 'scent', 'acf_aroma']):
+                if isinstance(meta_value, list):
+                    product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in meta_value]))
+                elif meta_value is not None:
+                    product['aroma'] = str(meta_value).strip()
+            if product.get('with_milk_suitable') is None and any(k in meta_key for k in ['_milk_suitable', 'with_milk', 'suitable_for_milk', 'acf_milk_suitable']):
+                if isinstance(meta_value, str):
+                    product['with_milk_suitable'] = meta_value.lower() in ['true', 'yes', '1', 'suitable']
+                elif isinstance(meta_value, bool):
+                    product['with_milk_suitable'] = meta_value
+                elif isinstance(meta_value, int):
+                    product['with_milk_suitable'] = bool(meta_value)
+            if product.get('varietals') is None and any(k in meta_key for k in ['_varietals', 'coffee_varietals', 'varietal', 'cultivar', 'acf_varietals']):
+                if isinstance(meta_value, str):
+                    product['varietals'] = [v.strip() for v in meta_value.split(',') if v.strip()]
+                elif isinstance(meta_value, list):
+                    product['varietals'] = [str(v).strip() for v in meta_value if str(v).strip()]
+                elif meta_value is not None:
+                    product['varietals'] = [str(meta_value).strip()]
+            if product.get('altitude_meters') is None and any(k in meta_key for k in ['_altitude', '_altitude_meters', 'elevation', 'masl', 'grown_at', 'acf_altitude']):
+                product['altitude_meters'] = _parse_altitude_string(meta_value)
     
-    # Extract metadata from description if not found in attributes
+    
+    # Extract attributes from tags as a fallback
+    tag_extracted_attrs = _extract_attributes_from_tags(product.get('tags', []))
+
+    if product.get('acidity') is None and tag_extracted_attrs.get('acidity'):
+        product['acidity'] = tag_extracted_attrs['acidity']
+    if product.get('body') is None and tag_extracted_attrs.get('body'):
+        product['body'] = tag_extracted_attrs['body']
+    if product.get('sweetness') is None and tag_extracted_attrs.get('sweetness'):
+        product['sweetness'] = tag_extracted_attrs['sweetness']
+    
+    if product.get('aroma') is None and tag_extracted_attrs.get('aroma'):
+        # Value from tag is expected to be a string already
+        product['aroma'] = str(tag_extracted_attrs['aroma']).strip()
+
+    if product.get('with_milk_suitable') is None and tag_extracted_attrs.get('with_milk_suitable'):
+        raw_milk_from_tag = tag_extracted_attrs['with_milk_suitable']
+        if isinstance(raw_milk_from_tag, str):
+            product['with_milk_suitable'] = raw_milk_from_tag.lower() in ['true', 'yes', '1', 'suitable']
+        # Note: boolean directly from regex match is not typical, usually string
+
+    if product.get('varietals') is None and tag_extracted_attrs.get('varietals'):
+        raw_varietals_from_tag = tag_extracted_attrs['varietals']
+        if isinstance(raw_varietals_from_tag, str):
+            product['varietals'] = [v.strip() for v in raw_varietals_from_tag.split(',') if v.strip()]
+        # Tags are unlikely to provide a list directly, usually string.
+
+    if product.get('altitude_meters') is None and tag_extracted_attrs.get('altitude_meters'):
+        product['altitude_meters'] = _parse_altitude_string(tag_extracted_attrs['altitude_meters'])
+
+    # Extract metadata from description if not found from attributes, meta_data or tags
     extracted_data = extract_coffee_metadata_from_description(description)
     for key, value in extracted_data.items():
-        if key in product and not product[key]:
-            product[key] = value
-    
-    # Extract flavor profiles and brew methods if not set yet
-    if not product['flavor_profiles']:
+        # Ensure we only fill if product field is still None or empty (for lists)
+        if key in product and (product[key] is None or (isinstance(product[key], list) and not product[key])) :
+            # Specific handling for fields that might come from description extraction
+            if key == 'roast_level' and product.get('roast_level') is None:
+                 product['roast_level'] = standardize_roast_level(value)
+            elif key == 'bean_type' and product.get('bean_type') is None:
+                 product['bean_type'] = standardize_bean_type(value)
+            elif key == 'processing_method' and product.get('processing_method') is None:
+                 product['processing_method'] = standardize_processing_method(value)
+            elif key == 'region_name' and product.get('region_name') is None:
+                 product['region_name'] = value
+            # For flavor_notes from description, it should populate flavor_profiles
+            elif key == 'flavor_notes' and not product.get('flavor_profiles'):
+                 product['flavor_profiles'] = [fn.strip() for fn in value.split(',') if fn.strip()]
+            # Other fields like elevation are not directly mapped here unless new fields added to extract_coffee_metadata_from_description
+
+    # Ensure flavor_profiles and brew_methods are populated if still empty
+    if not product.get('flavor_profiles'): # Check if list is empty or None
         product['flavor_profiles'] = extract_flavor_profiles(description)
     
-    if not product['brew_methods']:
+    if not product.get('brew_methods'): # Check if list is empty or None
         product['brew_methods'] = extract_brew_methods(description)
     
     # Determine single origin status if not set yet

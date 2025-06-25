@@ -86,58 +86,128 @@ async def extract_products_shopify(base_url: str, roaster_id: str, product_handl
     
     # Determine the API endpoint
     if product_handle:
-        api_url = f"{base_url}/products/{product_handle}.json"
+        product_api_url = f"{base_url}/products/{product_handle}.json"
     else:
-        api_url = f"{base_url}/products.json?limit=250"
+        product_api_url = f"{base_url}/products.json?limit=250"
     
-    logger.info(f"Fetching Shopify products from: {api_url}")
+    logger.info(f"Fetching Shopify products from: {product_api_url}")
     
-    # Make API request
+    products_to_standardize = []
+
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-            response = await client.get(api_url)
-            
-            if response.status_code != 200:
-                logger.warning(f"Failed to fetch Shopify products: {response.status_code}")
-                return []
-                
+            response = await client.get(product_api_url)
+            response.raise_for_status() # Raise an exception for bad status codes
             data = response.json()
-            
-        # Extract products
-        if product_handle:
-            # Single product response
-            if 'product' in data:
-                shopify_products = [data['product']]
+
+            shopify_products_raw = []
+            if product_handle:
+                if 'product' in data:
+                    shopify_products_raw = [data['product']]
+                else:
+                    logger.warning(f"No product data found for handle: {product_handle}")
+                    return []
             else:
-                logger.warning(f"No product data found for handle: {product_handle}")
-                return []
-        else:
-            # Multiple products response
-            if 'products' in data:
-                shopify_products = data['products']
-            else:
-                logger.warning("No products found in Shopify API response")
-                return []
-                
-        # Convert to standardized format
-        standardized_products = []
-        for product in shopify_products:
-            try:
-                # First, check if product is actually coffee
-                if not is_coffee_product(
-                    name=product.get('title', ''), 
-                    description=product.get('body_html', ''),
-                    product_type=product.get('product_type', ''),
-                    tags=product.get('tags', [])
-                ):
-                    logger.debug(f"Skipping non-coffee product: {product.get('title', '')}")
+                if 'products' in data:
+                    shopify_products_raw = data['products']
+                else:
+                    logger.warning("No products found in Shopify API response for list")
+                    return []
+
+            # Fetch metafields
+            for product_raw in shopify_products_raw:
+                product_id = product_raw.get('id')
+                if not product_id:
+                    logger.warning(f"Product missing ID, cannot fetch metafields: {product_raw.get('title', 'Unknown title')}")
+                    products_to_standardize.append(product_raw)
                     continue
                 
-                std_product_dict = standardize_shopify_product(product, base_url, roaster_id)
+                # Default to empty list if no metafields found or error
+                product_raw['metafields'] = [] 
+                
+                # Attempt to fetch metafields from /admin/api/ - this requires auth and correct base_url for admin
+                # This is a best-effort attempt as per instructions.
+                # In a real public scraper, this specific path is unlikely to work without authentication.
+                # A more realistic Shopify scraper would use a private app with API access, or rely on theme-exposed data.
+                # For this exercise, we form the URL as requested.
+                # It's important that `base_url` is the shop's main URL, not an admin-specific one.
+                # The construction of admin_api_base_url might be more complex in reality.
+                # Assuming `base_url` is like "https://shop.com"
+                # Then metafields_url is "https://shop.com/admin/api/2023-10/products/{product_id}/metafields.json"
+                # Note: API version (e.g., 2023-10) is often part of the admin path. Using a recent one.
+                admin_api_version = "2024-04" # Or a relevant API version
+                metafields_url = f"{base_url}/admin/api/{admin_api_version}/products/{product_id}/metafields.json"
+                
+                # Check if metafields are already embedded (e.g., by some apps or newer API versions of /products.json)
+                if 'metafields' in product_raw and isinstance(product_raw['metafields'], list) and product_raw['metafields']:
+                    logger.debug(f"Using embedded metafields for product {product_id}")
+                else:
+                    logger.info(f"Attempting to fetch metafields for product {product_id} from {metafields_url}")
+                    try:
+                        # This client.get reuses the existing AsyncClient
+                        metafields_response = await client.get(metafields_url)
+                        # Do not raise_for_status here, handle errors gracefully
+                        if metafields_response.status_code == 200:
+                            metafields_data = metafields_response.json()
+                            if 'metafields' in metafields_data:
+                                product_raw['metafields'] = metafields_data['metafields']
+                                logger.debug(f"Successfully fetched metafields for product {product_id}")
+                        elif metafields_response.status_code == 401 or metafields_response.status_code == 403:
+                            logger.warning(f"Unauthorized (401/403) to fetch metafields for product {product_id} from {metafields_url}. This usually requires an Admin API token.")
+                        elif metafields_response.status_code == 404:
+                            logger.warning(f"Metafields endpoint not found (404) for product {product_id} at {metafields_url}. This path might be incorrect or metafields not set up for admin access.")
+                        else:
+                            logger.warning(f"Failed to fetch metafields for product {product_id} from {metafields_url}: {metafields_response.status_code}")
+                    except httpx.RequestError as e:
+                        logger.error(f"HTTP Request Error fetching metafields for product {product_id}: {e}")
+                    except json.JSONDecodeError as e:
+                        logger.error(f"JSON Decode Error fetching metafields for product {product_id}: {e}")
+                    except Exception as e: # Catch any other error during metafield fetch
+                        logger.error(f"Generic error fetching metafields for product {product_id}: {e}", exc_info=True)
+                
+                products_to_standardize.append(product_raw)
+        
+        # Standardize products
+        standardized_products = []
+        for product_data in products_to_standardize:
+            try:
+                if not is_coffee_product(
+                    name=product_data.get('title', ''), 
+                    description=product_data.get('body_html', ''),
+                    product_type=product_data.get('product_type', ''),
+                    tags=product_data.get('tags', [])
+                ):
+                    logger.debug(f"Skipping non-coffee product: {product_data.get('title', '')}")
+                    continue
+                
+                std_product_dict = standardize_shopify_product(product_data, base_url, roaster_id)
                 if std_product_dict:
+                    # Attempt to convert to Pydantic model
                     coffee_model = dict_to_pydantic_model(std_product_dict, Coffee, preprocessor=preprocess_coffee_data)
-                if coffee_model:  
-                    standardized_products.append(coffee_model)
+                    if coffee_model:
+                        standardized_products.append(coffee_model)
+                    else:
+                        # Log validation error and append dict if model conversion fails
+                        logger.warning(f"Pydantic model validation failed for {std_product_dict.get('name')}, using dict.")
+                        standardized_products.append(std_product_dict) # Fallback to dict
+            except Exception as e:
+                logger.error(f"Error standardizing Shopify product {product_data.get('title', '')}: {e}", exc_info=True)
+                continue
+                
+        logger.info(f"Successfully processed {len(standardized_products)} Shopify products.")
+        return standardized_products
+        
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP Status Error fetching Shopify products: {e.response.status_code} from {e.request.url}. Response: {e.response.text[:200]}")
+        return []
+    except httpx.RequestError as e:
+        logger.error(f"HTTP Request Error fetching Shopify products from {e.request.url}: {e}")
+        return []
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON Decode Error fetching Shopify products: {e}. Response text: {response.text[:200] if 'response' in locals() else 'N/A'}")
+        return []
+    except Exception as e: # Catch-all for other unexpected errors
+        logger.error(f"Generic Error fetching Shopify products: {e}", exc_info=True)
                 else:
                     # Fallback to dict if model validation fails
                     logger.warning(f"Validation failed for {std_product_dict.get('name')}, using dict instead")
@@ -204,10 +274,62 @@ def standardize_shopify_product(shopify_product: Dict[str, Any], base_url: str, 
     # Extract metadata/attributes from product
     # Improved roast level and processing method extraction
     product['roast_level'] = extract_roast_level_from_shopify(shopify_product, product.get('tags', []))
-    product['bean_type'] = standardize_bean_type(extract_attribute(shopify_product, 'bean_type', ['bean type', 'bean-type', 'beans', 'variety']))
+    product['bean_type'] = standardize_bean_type(extract_attribute(shopify_product, 'bean_type', ['bean type', 'bean-type', 'beans', 'variety', 'coffee_bean_type']))
     product['processing_method'] = extract_processing_method_from_shopify(shopify_product, product.get('tags', []), product['name'], product['slug'])
-    product['region_name'] = extract_attribute(shopify_product, 'region_name', ['origin', 'region', 'country'])
+    product['region_name'] = extract_attribute(shopify_product, 'region_name', ['origin', 'region', 'country', 'coffee_origin'])
     
+    # New attributes - extraction and type conversion
+    product['acidity'] = extract_attribute(shopify_product, 'acidity', ['acidity', 'coffee_acidity', 'acid_level'])
+    product['body'] = extract_attribute(shopify_product, 'body', ['body', 'mouthfeel', 'coffee_body'])
+    product['sweetness'] = extract_attribute(shopify_product, 'sweetness', ['sweetness', 'coffee_sweetness'])
+
+    raw_aroma = extract_attribute(shopify_product, 'aroma', ['aroma', 'fragrance', 'coffee_aroma', 'aromatic_profile'])
+    if isinstance(raw_aroma, list):
+        product['aroma'] = ', '.join(filter(None, [str(a).strip() for a in raw_aroma]))
+    elif isinstance(raw_aroma, str):
+        product['aroma'] = raw_aroma.strip()
+    elif raw_aroma is not None:
+        product['aroma'] = str(raw_aroma)
+    else:
+        product['aroma'] = None
+
+    raw_varietals = extract_attribute(shopify_product, 'varietals', ['varietals', 'varietal', 'coffee_varietals', 'cultivar'])
+    if isinstance(raw_varietals, str):
+        product['varietals'] = [v.strip() for v in raw_varietals.split(',') if v.strip()]
+    elif isinstance(raw_varietals, list):
+        product['varietals'] = [str(v).strip() for v in raw_varietals if str(v).strip()]
+    else:
+        product['varietals'] = None
+
+    raw_altitude = extract_attribute(shopify_product, 'altitude_meters', ['altitude', 'elevation', 'altitude_meters', 'growing_altitude'])
+    if isinstance(raw_altitude, str):
+        match = re.search(r'^(\d+)', raw_altitude.strip()) # Take the first number for ranges like "1200-1800m"
+        if match:
+            try:
+                product['altitude_meters'] = int(match.group(1))
+            except ValueError:
+                product['altitude_meters'] = None
+        else:
+            product['altitude_meters'] = None
+    elif isinstance(raw_altitude, (int, float)): # Allow float then convert to int
+        product['altitude_meters'] = int(raw_altitude)
+    else:
+        product['altitude_meters'] = None
+
+    raw_milk = extract_attribute(shopify_product, 'with_milk_suitable', ['with_milk', 'milk_suitable', 'good_with_milk', 'serves_well_with_milk'])
+    if isinstance(raw_milk, str):
+        raw_milk_lower = raw_milk.lower()
+        if raw_milk_lower in ['true', 'yes', 'recommended', 'suitable']:
+            product['with_milk_suitable'] = True
+        elif raw_milk_lower in ['false', 'no', 'not recommended', 'unsuitable']:
+            product['with_milk_suitable'] = False
+        else:
+            product['with_milk_suitable'] = None # Undetermined
+    elif isinstance(raw_milk, bool):
+        product['with_milk_suitable'] = raw_milk
+    else:
+        product['with_milk_suitable'] = None
+
     # Determine single origin status
     product['is_single_origin'] = _determine_single_origin(
         product['name'], 
@@ -328,34 +450,56 @@ def extract_attribute(shopify_product: Dict[str, Any], field_name: str, possible
     Returns:
         Attribute value if found, None otherwise
     """
-    # Check metafields first
-    if 'metafields' in shopify_product:
-        for metafield in shopify_product['metafields']:
+    # Check metafields first (if they exist on the product object)
+    # Note: shopify_product.get('metafields') is used as metafields might not always be present.
+    metafields_on_product = shopify_product.get('metafields')
+    if isinstance(metafields_on_product, list): # Ensure it's a list
+        for metafield in metafields_on_product:
+            if not isinstance(metafield, dict): continue # Skip if metafield is not a dict
             key = metafield.get('key', '').lower()
-            if any(possible_key in key for possible_key in possible_keys):
+            namespace = metafield.get('namespace', '').lower()
+            # Check both key and namespace.key
+            if any(possible_key in key for possible_key in possible_keys) or \
+               any(f"{namespace}.{key}" == possible_key for possible_key in possible_keys): # e.g. custom.acidity
                 return metafield.get('value')
     
     # Check options
     if 'options' in shopify_product:
         for option in shopify_product['options']:
+            if not isinstance(option, dict): continue
             name = option.get('name', '').lower()
             if any(possible_key in name for possible_key in possible_keys):
-                # Return first value if available
-                if 'values' in option and option['values']:
-                    return option['values'][0]
+                if 'values' in option and isinstance(option['values'], list) and option['values']:
+                    return option['values'][0] # Return first value if available
     
-    # Check tags for specific attributes
+    # Check tags for specific attributes, including key:value patterns
     if shopify_product.get('tags'):
-        tags = _process_tags(shopify_product['tags'])
+        tags = _process_tags(shopify_product['tags']) # Ensure tags is a list of strings
         for tag in tags:
             tag_lower = tag.lower()
-            # Look for tags that might indicate an attribute value
-            for key in possible_keys:
-                if key in tag_lower:
-                    # Extract the value after the key
-                    parts = tag_lower.split(key)
+            # Check for key:value pattern
+            if ':' in tag_lower:
+                tag_key, tag_value = tag_lower.split(':', 1)
+                tag_key = tag_key.strip()
+                if any(possible_key == tag_key for possible_key in possible_keys):
+                    return tag_value.strip()
+            
+            # Original tag check (if key is just part of the tag)
+            for key_search in possible_keys: # Renamed `key` to `key_search` to avoid conflict
+                if key_search in tag_lower:
+                    # Attempt to extract value if tag is like "roast level light"
+                    parts = tag_lower.split(key_search)
                     if len(parts) > 1 and parts[1].strip():
-                        return parts[1].strip().replace('-', '').replace(':', '').strip()
+                         # Clean up common separators if it's not a key:value pair
+                        value_part = parts[1].strip().replace('-', ' ').replace(':', '').strip()
+                        if value_part: return value_part
+                    # If the key itself is the value (e.g. tag "light" for roast_level)
+                    # This part is tricky and might need context; let's assume for now simple presence implies the key
+                    # This is better handled by the calling function's standardization logic.
+                    # For extract_attribute, we primarily return explicit values.
+                    # Consider returning `tag_lower` itself if it matches a known value for the field_name.
+                    # This part is more complex and context-dependent.
+                    # For now, prioritize explicit key:value or key followed by value.
     
     # Check product type as fallback for some fields
     product_type = shopify_product.get('product_type', '').lower()

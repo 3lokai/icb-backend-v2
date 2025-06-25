@@ -39,7 +39,7 @@ class ProductScraper:
     def __init__(self):
         self.platform_detector = PlatformDetector()
         
-    async def scrape_products(self, roaster_id: str, url: str, roaster_name: str) -> List[Coffee]:
+    async def scrape_products(self, roaster_id: str, url: str, roaster_name: str, force_refresh: bool = False, use_enrichment: bool = True) -> List[Coffee]:
         """
         Main entry point for product scraping.
         
@@ -47,18 +47,21 @@ class ProductScraper:
             roaster_id: Database ID of the roaster
             url: Base URL of the roaster's website
             roaster_name: Name of the roaster (for logging and validation)
+            force_refresh: If True, bypass cache and re-scrape
+            use_enrichment: If True, use LLM enrichment
             
         Returns:
             List of Coffee model instances that were scraped
         """
-        logger.info(f"Starting product scraping for {roaster_name} ({url})")
-        
-        # Check for cached products first
-        cached_products = get_cached_products(roaster_id, max_age_days=7)
-        if cached_products:
-            logger.info(f"Using {len(cached_products)} cached products for {roaster_name}")
-            return [dict_to_pydantic_model(p, Coffee, preprocessor=preprocess_coffee_data) 
-                    for p in cached_products if p]
+        logger.info(f"Starting product scraping for {roaster_name} ({url}) with force_refresh={force_refresh}, use_enrichment={use_enrichment}")
+        if not force_refresh:
+            cached_products = get_cached_products(roaster_id, max_age_days=7)
+            if cached_products:
+                logger.info(f"Using {len(cached_products)} cached products for {roaster_name}")
+                return [dict_to_pydantic_model(p, Coffee, preprocessor=preprocess_coffee_data) 
+                        for p in cached_products if p]
+        else:
+            logger.info(f"Force refresh enabled for {roaster_name}. Bypassing cache read.")
         
         # 1. Detect platform
         platform, confidence = await self.platform_detector.detect(url)
@@ -97,13 +100,17 @@ class ProductScraper:
                 continue
                 
             # Enrich product with missing data
-            enriched_product = await enrich_coffee_product(product_dict, roaster_name)
+            if use_enrichment:
+                enriched_product_data = await enrich_coffee_product(product_dict, roaster_name)
+            else:
+                logger.info(f"Skipping LLM enrichment for product {product_dict.get('name', 'Unknown')} from {roaster_name} as per 'use_enrichment=False'.")
+                enriched_product_data = product_dict # Use the product_dict directly if not enriching
             
             # Validate enriched product (phase 2)
-            if validate_enriched_product(enriched_product):
-                # Convert to Coffee model
+            # The validator should be able to handle data that hasn't been through LLM enrichment
+            if validate_enriched_product(enriched_product_data): 
                 coffee_model = dict_to_pydantic_model(
-                    enriched_product, 
+                    enriched_product_data, 
                     Coffee, 
                     preprocessor=preprocess_coffee_data
                 )
