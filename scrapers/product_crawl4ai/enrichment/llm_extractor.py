@@ -34,6 +34,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
     # Skip if no direct_buy_url
     if not product.get('direct_buy_url'):
         logger.warning(f"Cannot enrich product without URL: {product.get('name', 'Unknown')}")
+        product['deepseek_enriched'] = False
         return product
     
     # Check which fields are missing
@@ -45,6 +46,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
     # Skip if no fields need enrichment
     if not missing_fields:
         logger.debug(f"No fields need enrichment for: {product.get('name', 'Unknown')}")
+        product['deepseek_enriched'] = False
         return product
     
     logger.info(f"Enriching product {product.get('name', 'Unknown')} with missing fields: {missing_fields}")
@@ -164,11 +166,14 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
                         product['flavor_profiles'] = extracted['flavor_notes']
                 
                 logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
+                product['deepseek_enriched'] = True
             else:
                 logger.warning(f"Failed to enrich product: {result.error_message if not result.success else 'No extracted content'}")
+                product['deepseek_enriched'] = False
     
     except Exception as e:
         logger.error(f"Error during product enrichment: {e}")
+        product['deepseek_enriched'] = False
     
     return product
 

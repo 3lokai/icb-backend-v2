@@ -1,0 +1,14 @@
+Loaded default .env from D:\GT Stuff\icb-backend-v2\.env
+
+--- Scraping products for: Blue Tokai Coffee Roasters (https://bluetokaicoffee.com) ---
+[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...Found 32 coffee products
+
+Sample product:
+Name: Kerehaklu Estate - Peaberries
+Roast Level: light
+Bean Type: unknown
+Processing: unknown
+Region: None
+Single Origin: False
+Prices:
+  250g: 800.0

@@ -1,0 +1,14 @@
+Loaded default .env from D:\GT Stuff\icb-backend-v2\.env
+
+--- Scraping products for: Baba's Beans (https://babasbeanscoffee.com/) ---
+[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...[INIT]...Found 7 coffee products
+
+Sample product:
+Name: ROBUSTA KAAPI ROYALE
+Roast Level: None
+Bean Type: robusta
+Processing: None
+Region: Chikmagalur Elevation + Coorg Ft
+Single Origin: True
+Prices:
+  250g: 380.0
