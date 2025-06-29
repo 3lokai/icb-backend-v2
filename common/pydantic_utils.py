@@ -7,11 +7,11 @@ Usage:
     roaster = dict_to_pydantic_model(data_dict, Roaster)
     coffee = dict_to_pydantic_model(data_dict, Coffee)
 """
-from typing import Type, TypeVar, Optional, Any, Dict, Set
+from typing import Type, TypeVar, Optional, Any, Dict, Set, Callable
 from pydantic import BaseModel, ValidationError, HttpUrl
 import logging
 from datetime import datetime
-from common.utils import normalize_phone_number, clean_description, create_slug
+from common.utils import normalize_phone_number, clean_description, slugify
 from common.utils import standardize_roast_level, standardize_processing_method, standardize_bean_type
 from inspect import signature, isclass
 from collections.abc import Mapping
@@ -67,7 +67,7 @@ def _process_dict_for_db(data: Dict[str, Any]) -> Dict[str, Any]:
 T = TypeVar('T', bound=BaseModel)
 logger = logging.getLogger(__name__)
 
-def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel], field_map: dict = None) -> dict:
+def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel], field_map: Optional[dict] = None) -> dict:
     """
     Filter and coerce fields in data to match model_class, with optional field name mapping.
     """
@@ -101,10 +101,11 @@ def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel]
         # Recursively handle nested models/lists
         if isinstance(v, list):
             subfield = model_class.model_fields[field_name]
-            if hasattr(subfield.annotation, "__origin__") and subfield.annotation.__origin__ is list:
-                submodel = subfield.annotation.__args__[0]
+            annotation = getattr(subfield, "annotation", None)
+            if annotation is not None and hasattr(annotation, "__origin__") and annotation.__origin__ is list:
+                submodel = annotation.__args__[0]
                 if isclass(submodel) and issubclass(submodel, BaseModel):
-                    v = [_filter_and_coerce_fields(item, submodel) if isinstance(item, Mapping) else item for item in v]
+                    v = [_filter_and_coerce_fields(dict(item), submodel) if isinstance(item, Mapping) else item for item in v]
         elif isinstance(v, dict):
             subfield = model_class.model_fields[field_name]
             submodel = getattr(subfield.annotation, "__args__", [None])[0] or subfield.annotation
@@ -113,7 +114,7 @@ def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel]
         result[field_name] = v
     return result
 
-def dict_to_pydantic_model(data: Dict[str, Any], model_class: Type[T], field_map: dict = None, preprocessor: callable = None) -> Optional[T]:
+def dict_to_pydantic_model(data: Dict[str, Any], model_class: Type[T], field_map: Optional[dict] = None, preprocessor: Optional[Callable[[dict], dict]] = None) -> Optional[T]:
     """
     Convert a dict to a Pydantic model instance, with preprocessing and type coercion.
     - field_map: dict for renaming fields (e.g., {'about_url': 'aboutUrl'})
@@ -126,7 +127,7 @@ def dict_to_pydantic_model(data: Dict[str, Any], model_class: Type[T], field_map
         return model_class(**clean_data)
     except ValidationError as e:
         logger.error(f"Validation error for {model_class.__name__}: {e}")
-        return
+        return None
 
 def preprocess_roaster_data(data: dict) -> dict:
     # Normalize phone fields
@@ -138,7 +139,7 @@ def preprocess_roaster_data(data: dict) -> dict:
         data["description"] = clean_description(data["description"])
     # Create slug
     if "name" in data and data["name"]:
-        data["slug"] = create_slug(data["name"])
+        data["slug"] = slugify(data["name"])
     # Lowercase domain
     if "domain" in data and data["domain"]:
         data["domain"] = data["domain"].lower()
@@ -159,5 +160,5 @@ def preprocess_coffee_data(data: dict) -> dict:
         data["description"] = clean_description(data["description"])
     # Create slug
     if "name" in data and data["name"]:
-        data["slug"] = create_slug(data["name"])
+        data["slug"] = slugify(data["name"])
     return data

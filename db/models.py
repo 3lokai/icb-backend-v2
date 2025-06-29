@@ -3,14 +3,14 @@ Database models for the Coffee Scraper.
 These models should match the Supabase schema.
 """
 
-from typing import List, Optional, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field, HttpUrl
+from typing import Dict, List, Optional
 
-# Enum type models - these should match your Supabase enums
+from pydantic import BaseModel, HttpUrl
 
 class RoastLevel(str):
     """Roast level enum values."""
+
     LIGHT = "light"
     LIGHT_MEDIUM = "light-medium"
     MEDIUM = "medium"
@@ -28,13 +28,26 @@ class RoastLevel(str):
     UNKNOWN = "unknown"
 
     ALL = {
-        LIGHT, LIGHT_MEDIUM, MEDIUM, MEDIUM_DARK, DARK,
-        CITY, CITY_PLUS, FULL_CITY, FRENCH, ITALIAN, CINNAMON,
-        FILTER, ESPRESSO, OMNIROAST, UNKNOWN
+        LIGHT,
+        LIGHT_MEDIUM,
+        MEDIUM,
+        MEDIUM_DARK,
+        DARK,
+        CITY,
+        CITY_PLUS,
+        FULL_CITY,
+        FRENCH,
+        ITALIAN,
+        CINNAMON,
+        FILTER,
+        ESPRESSO,
+        OMNIROAST,
+        UNKNOWN,
     }
 
 class BeanType(str):
     """Bean type enum values."""
+
     ARABICA = "arabica"
     ROBUSTA = "robusta"
     LIBERICA = "liberica"
@@ -43,12 +56,11 @@ class BeanType(str):
     ARABICA_ROBUSTA = "arabica-robusta"
     UNKNOWN = "unknown"
 
-    ALL = {
-        ARABICA, ROBUSTA, LIBERICA, BLEND, MIXED_ARABICA, ARABICA_ROBUSTA, UNKNOWN
-    }
+    ALL = {ARABICA, ROBUSTA, LIBERICA, BLEND, MIXED_ARABICA, ARABICA_ROBUSTA, UNKNOWN}
 
 class ProcessingMethod(str):
     """Processing method enum values."""
+
     WASHED = "washed"
     NATURAL = "natural"
     HONEY = "honey"
@@ -61,21 +73,28 @@ class ProcessingMethod(str):
     UNKNOWN = "unknown"
 
     ALL = {
-        WASHED, NATURAL, HONEY, PULPED_NATURAL, ANAEROBIC, MONSOONED, WET_HULLED, CARBONIC_MACERATION, DOUBLE_FERMENTED, UNKNOWN
+        WASHED,
+        NATURAL,
+        HONEY,
+        PULPED_NATURAL,
+        ANAEROBIC,
+        MONSOONED,
+        WET_HULLED,
+        CARBONIC_MACERATION,
+        DOUBLE_FERMENTED,
+        UNKNOWN,
     }
-
-# Base models
 
 class BaseDBModel(BaseModel):
     """Base model with common fields."""
+
     id: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-# Roaster models
-
 class Roaster(BaseDBModel):
     """Model for coffee roasters."""
+
     name: str
     slug: str
     website_url: HttpUrl
@@ -98,16 +117,16 @@ class Roaster(BaseDBModel):
     is_active: bool = True
     is_verified: bool = False
 
-# Coffee models
-
 class CoffeePrice(BaseModel):
     """Model for coffee prices at different sizes."""
+
     coffee_id: Optional[str] = None
     size_grams: int
     price: float
 
 class ExternalLink(BaseModel):
     """Model for external marketplace links."""
+
     id: Optional[str] = None
     coffee_id: Optional[str] = None
     provider: str
@@ -115,6 +134,7 @@ class ExternalLink(BaseModel):
 
 class Coffee(BaseDBModel):
     """Model for coffee products."""
+
     name: str
     slug: str
     roaster_id: str
@@ -140,39 +160,38 @@ class Coffee(BaseDBModel):
     with_milk_suitable: Optional[bool] = None
     varietals: Optional[List[str]] = None
     altitude_meters: Optional[int] = None
-    
+
     # Related data (not stored directly in the table)
     prices: Optional[List[CoffeePrice]] = None
     brew_methods: Optional[List[str]] = None
     flavor_profiles: Optional[List[str]] = None
     external_links: Optional[List[ExternalLink]] = None
 
-# Related data models (for many-to-many relationships)
-
 class CoffeeBrewMethod(BaseModel):
     """Model for the relationship between coffee and brew methods."""
+
     coffee_id: Optional[str] = None
     brew_method_id: Optional[str] = None
 
 class CoffeeFlavorProfile(BaseModel):
     """Model for the relationship between coffee and flavor profiles."""
+
     coffee_id: Optional[str] = None
     flavor_profile_id: str
 
-# Lookup table models
-
 class BrewMethod(BaseDBModel):
     """Model for brew method lookup table."""
+
     name: str
 
 class FlavorProfile(BaseDBModel):
     """Model for flavor profile lookup table."""
-    name: str
 
-# Scraping metadata and state models
+    name: str
 
 class ScrapingState(BaseModel):
     """Model for tracking scraping state."""
+
     url: str
     last_scraped: datetime
     status: str  # "success", "error", "pending"

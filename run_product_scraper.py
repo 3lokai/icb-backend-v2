@@ -5,225 +5,162 @@ Script to run the coffee product scraper for one or more roasters.
 """
 
 import sys
+import argparse
+import json
+from pathlib import Path
 
-def main():
-    # Generate field coverage report if requested
-    if args.analyze and total_products > 0:
-        coverage_stats = scraper.analyze_field_coverage(serialized_products)
-        source_stats = scraper.get_field_source_stats(serialized_products)
-        analysis_path = output_path.parent / f"{output_path.stem}_analysis.json"
-        export_to_json({
-            "field_coverage": coverage_stats,
-            "field_sources": source_stats,
-            "total_products": len(serialized_products),
-            "total_roasters": total_roasters,
-            "timestamp": datetime.now().isoformat()
-        }, str(analysis_path), indent=2)
-        logger.info(f"Saved analysis report to {analysis_path}")
+from scrapers.product_crawl4ai.scraper import ProductScraper
 
-    # Print summary
-    print("\n" + "="*60)
-    print(f"COFFEE PRODUCT SCRAPER SUMMARY")
-    print("="*60)
-    print(f"Total roasters processed: {total_roasters}/{len(roasters)}")
-    print(f"Total products scraped: {total_products}")
-    print(f"Output file: {args.output}")
-    print(f"Export format: {export_format}")
-    print(f"Log file: {log_file}")
-    print("="*60 + "\n")
-
-    # Return error code based on results
-    if total_roasters == 0:
-        return 1
-    return 0
-
-if __name__ == "__main__":
-    import asyncio
-    sys.exit(asyncio.run(main()))
-
-async def scrape_single_url(args):
-    """Scrape a single product URL directly."""
-    # Initialize scraper
-    scraper = ProductScraper(
-        force_refresh=True,  # Always force refresh for single URLs
-        use_enrichment=not args.no_enrichment,
-        confidence_tracking=not args.no_confidence
-    )
-    
-    # Run scraper
-    logger.info(f"Scraping single URL: {args.url}")
-    product = await scraper.scrape_single_url(args.url, args.roaster_name)
-    
-    if not product:
-        logger.error(f"Failed to scrape product from {args.url}")
-        return 1
-    
-    # Save output
-    output_path = Path(args.output)
-    output_path.parent.mkdir(exist_ok=True, parents=True)
-    
-    export_to_json(product, str(output_path), indent=2)
-    
-    # Print summary
-    print("\n" + "="*60)
-    print(f"SINGLE PRODUCT SCRAPER SUMMARY")
-    print("="*60)
-    print(f"Product: {product.get('name', 'Unknown')}")
-    print(f"Roast Level: {product.get('roast_level', 'Unknown')}")
-    print(f"Bean Type: {product.get('bean_type', 'Unknown')}")
-    print(f"Processing Method: {product.get('processing_method', 'Unknown')}")
-    if 'flavor_profiles' in product:
-        print(f"Flavor Profiles: {', '.join(product['flavor_profiles'])}")
-    print(f"Price (250g): {product.get('price_250g', 'Unknown')}")
-    print(f"Output file: {args.output}")
-    print("="*60 + "\n")
-    
-    return 0
 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Coffee Product Scraper")
-    subparsers = parser.add_subparsers(dest='command', help='Command to run')
-    
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
     # Batch scraper command
-    batch_parser = subparsers.add_parser('batch', help='Scrape products from multiple roasters')
-    batch_parser.add_argument('--roasters', required=True, help='JSON file containing roaster data')
-    batch_parser.add_argument('--output', default='./output/products.json', help='Output file (JSON or CSV)')
-    batch_parser.add_argument('--export-format', choices=['json', 'csv'], default='json', help='Export format: json or csv (default: json)')
-    batch_parser.add_argument('--platform', help='Only scrape specific platform (shopify, woocommerce, static)')
-    batch_parser.add_argument('--roaster-id', help='Only scrape specific roaster by ID or slug')
-    batch_parser.add_argument('--limit', type=int, help='Limit number of roasters to scrape')
-    batch_parser.add_argument('--force-refresh', action='store_true', help='Force refresh, ignore cache')
-    batch_parser.add_argument('--no-enrichment', action='store_true', help='Disable LLM enrichment')
-    batch_parser.add_argument('--no-confidence', action='store_true', help='Disable confidence tracking')
-    batch_parser.add_argument('--analyze', action='store_true', help='Generate field coverage analysis report')
+    batch_parser = subparsers.add_parser("batch", help="Scrape products from multiple roasters")
+    batch_parser.add_argument("--roasters", required=True, help="JSON file containing roaster data")
+    batch_parser.add_argument("--output", default="./output/products.json", help="Output file (JSON or CSV)")
+    batch_parser.add_argument(
+        "--export-format", choices=["json", "csv"], default="json", help="Export format: json or csv (default: json)"
+    )
+    batch_parser.add_argument("--platform", help="Only scrape specific platform (shopify, woocommerce, static)")
+    batch_parser.add_argument("--roaster-id", help="Only scrape specific roaster by ID or slug")
+    batch_parser.add_argument("--limit", type=int, help="Limit number of roasters to scrape")
+    batch_parser.add_argument("--force-refresh", action="store_true", help="Force refresh, ignore cache")
+    batch_parser.add_argument("--no-enrichment", action="store_true", help="Disable LLM enrichment")
+    batch_parser.add_argument("--no-confidence", action="store_true", help="Disable confidence tracking")
+    batch_parser.add_argument("--analyze", action="store_true", help="Generate field coverage analysis report")
 
     # Add roaster link argument
-    batch_parser.add_argument('--roaster-link', help='Roaster link to scrape')
-    
+    batch_parser.add_argument("--roaster-link", help="Roaster link to scrape")
+
     # Single URL scraper command
-    url_parser = subparsers.add_parser('url', help='Scrape a single product URL')
-    url_parser.add_argument('--url', required=True, help='Product URL to scrape')
-    url_parser.add_argument('--output', default='./output/single_product.json', help='Output JSON file')
-    url_parser.add_argument('--roaster-name', default='Unknown', help='Roaster name (for context)')
-    url_parser.add_argument('--no-enrichment', action='store_true', help='Disable LLM enrichment')
-    url_parser.add_argument('--no-confidence', action='store_true', help='Disable confidence tracking')
-    
+    url_parser = subparsers.add_parser("url", help="Scrape a single product URL")
+    url_parser.add_argument("--url", required=True, help="Product URL to scrape")
+    url_parser.add_argument("--output", default="./output/single_product.json", help="Output JSON file")
+    url_parser.add_argument("--roaster-name", default="Unknown", help="Roaster name (for context)")
+    url_parser.add_argument("--no-enrichment", action="store_true", help="Disable LLM enrichment")
+    url_parser.add_argument("--no-confidence", action="store_true", help="Disable confidence tracking")
+
     # Add validation command for existing products
-    validate_parser = subparsers.add_parser('validate', help='Validate and fix existing products')
-    validate_parser.add_argument('--input', required=True, help='Input JSON file containing products')
-    validate_parser.add_argument('--output', help='Output JSON file (defaults to overwriting input)')
-    
+    validate_parser = subparsers.add_parser("validate", help="Validate and fix existing products")
+    validate_parser.add_argument("--input", required=True, help="Input JSON file containing products")
+    validate_parser.add_argument("--output", help="Output JSON file (defaults to overwriting input)")
+
     args = parser.parse_args()
-    
-    if args.command == 'batch':
+
+    if args.command == "batch":
         if args.roaster_link:
             return asyncio.run(scrape_roaster_link(args))
         else:
             return asyncio.run(scrape_roasters(args))
-    elif args.command == 'url':
+    elif args.command == "url":
         return asyncio.run(scrape_single_url(args))
-    elif args.command == 'validate':
+    elif args.command == "validate":
         # Handle validation command
         return validate_products(args)
     else:
         parser.print_help()
         return 1
 
+
 async def scrape_roaster_link(args):
     """Scrape roaster information from a link and then scrape products."""
     from scrapers.roaster.scraper import RoasterScraper  # Import here to avoid circular dependency
-    
+
     roaster_scraper = RoasterScraper(
         force_refresh=args.force_refresh,
         use_enrichment=not args.no_enrichment,
-        confidence_tracking=not args.no_confidence
+        confidence_tracking=not args.no_confidence,
     )
-    
+
     try:
         # Scrape roaster information
         roaster = await roaster_scraper.scrape_roaster(args.roaster_link)
-        
+
         if not roaster:
             logger.error(f"Failed to scrape roaster from {args.roaster_link}")
             return 1
-        
+
         # Initialize product scraper
         product_scraper = ProductScraper(
             force_refresh=args.force_refresh,
             use_enrichment=not args.no_enrichment,
-            confidence_tracking=not args.no_confidence
+            confidence_tracking=not args.no_confidence,
         )
-        
+
         # Scrape products for the roaster
         products = await product_scraper.scrape_roaster_products(roaster)
-        
+
         # Prepare output path
         output_path = Path(args.output)
         output_path.parent.mkdir(exist_ok=True, parents=True)
-        
+
         # Save products to file
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(products, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Scraped {len(products)} products from {args.roaster_link}")
-        
+
         # Print summary
-        print("\n" + "="*60)
-        print(f"COFFEE PRODUCT SCRAPER SUMMARY")
-        print("="*60)
+        print("\n" + "=" * 60)
+        print("COFFEE PRODUCT SCRAPER SUMMARY")
+        print("=" * 60)
         print(f"Total products scraped: {len(products)}")
         print(f"Output file: {args.output}")
-        print("="*60 + "\n")
-        
+        print("=" * 60 + "\n")
+
         return 0
-    
+
     except Exception as e:
         logger.error(f"Error scraping roaster or products: {e}")
         return 1
+
 
 def validate_products(args):
     """Validate and fix existing product data."""
     try:
         # Load products
-        with open(args.input, 'r', encoding='utf-8') as f:
+        with open(args.input, "r", encoding="utf-8") as f:
             products = json.load(f)
-        
+
         if not isinstance(products, list):
             logger.error(f"Invalid product data format in {args.input}. Expected a list.")
             return 1
-        
+
         logger.info(f"Validating {len(products)} products")
-        
+
         # Process each product
         fixed_products = []
         for product in products:
             # Standardize model
             standardized = standardize_coffee_model(product)
-            
+
             # Validate fields
             validation_results = validate_coffee_product(standardized)
             fixed = apply_validation_corrections(standardized, validation_results)
-            
+
             fixed_products.append(fixed)
-        
+
         # Determine output path
         output_path = args.output if args.output else args.input
-        
+
         # Save output
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(fixed_products, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Validated and fixed {len(fixed_products)} products")
         logger.info(f"Saved to {output_path}")
-        
+
         return 0
-        
+
     except Exception as e:
         logger.error(f"Error validating products: {e}")
         return 1
 
+
 if __name__ == "__main__":
     import asyncio
-    from scrapers.product_crawl4ai.run_product_scraper import main
-    asyncio.run(main())
+
+    sys.exit(asyncio.run(main()))

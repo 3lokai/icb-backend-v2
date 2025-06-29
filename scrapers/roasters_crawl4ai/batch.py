@@ -9,17 +9,19 @@ Batch processing for roaster scraping using Crawl4AI.
 """
 
 import asyncio
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
 from loguru import logger
-from pathlib import Path
+
+from common.cache import cache
+from common.exporter import export_to_json
 
 from .crawler import RoasterCrawler
-from common.utils import fetch_with_retry
-from common.exporter import export_to_json, export_to_csv
-from common.cache import cache
+
 
 class AsyncRateLimiter:
     """Simple asyncio-based rate limiter."""
+
     def __init__(self, max_calls: int, period: float):
         self._max_calls = max_calls
         self._period = period
@@ -33,24 +35,30 @@ class AsyncRateLimiter:
             await asyncio.sleep(max(sleep_time, 0))
         self._calls.append(asyncio.get_event_loop().time())
 
-async def process_roaster(crawler: RoasterCrawler, name: str, url: str, rate_limiter: AsyncRateLimiter, max_retries: int = 2) -> Dict[str, Any]:
+
+async def process_roaster(
+    crawler: RoasterCrawler, name: str, url: str, rate_limiter: AsyncRateLimiter, max_retries: int = 2
+) -> Dict[str, Any]:
     for attempt in range(max_retries + 1):
         try:
             await rate_limiter.wait()
             data = await crawler.extract_roaster(name, url)
             return data
         except Exception as e:
-            logger.error(f"Error processing {name} ({url}), attempt {attempt+1}: {e}")
+            logger.error(f"Error processing {name} ({url}), attempt {attempt + 1}: {e}")
             if attempt == max_retries:
                 return {"name": name, "website_url": url, "error": str(e)}
-            await asyncio.sleep(2 ** attempt)
+            await asyncio.sleep(2**attempt)
+    # Fallback return in case all retries are exhausted and no exception is raised
+    return {"name": name, "website_url": url, "error": "Unknown error"}
+
 
 async def batch_process_roasters(
     roaster_list: List[Tuple[str, str]],
     concurrency: int = 5,
     rate_limit: int = 10,
     rate_period: float = 60.0,
-    export_path: Optional[str] = None
+    export_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Batch process multiple roaster websites asynchronously.
@@ -71,12 +79,12 @@ async def batch_process_roasters(
 
     async def sem_task(idx: int, name: str, url: str):
         async with semaphore:
-            logger.info(f"[{idx+1}/{total}] Processing: {name} ({url})")
+            logger.info(f"[{idx + 1}/{total}] Processing: {name} ({url})")
             result = await process_roaster(crawler, name, url, rate_limiter)
             # Cache/store result
             cache.cache_roaster(result)
             results.append(result)
-            logger.info(f"[{idx+1}/{total}] Done: {name}")
+            logger.info(f"[{idx + 1}/{total}] Done: {name}")
 
     tasks = [sem_task(i, name, url) for i, (name, url) in enumerate(roaster_list)]
     await asyncio.gather(*tasks)
@@ -87,6 +95,7 @@ async def batch_process_roasters(
         logger.info(f"Exported batch results to {export_path}")
 
     return results
+
 
 # Example usage (to be called from CLI or test):
 # import asyncio

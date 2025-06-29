@@ -1,8 +1,9 @@
-import pytest
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from common import exporter
+
 
 def test_export_to_csv_and_json(tmp_path):
     # Dummy data
@@ -26,6 +27,7 @@ def test_export_to_csv_and_json(tmp_path):
     exporter.export_to_json(data, str(json_path))
     assert os.path.exists(json_path)
     import json as pyjson
+
     with open(json_path, "r", encoding="utf-8") as f:
         loaded = pyjson.load(f)
         assert loaded == data

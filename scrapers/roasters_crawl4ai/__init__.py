@@ -4,4 +4,4 @@
 from .crawler import RoasterCrawler
 from .run import main
 
-__all__ = ['RoasterCrawler', 'main']
+__all__ = ["RoasterCrawler", "main"]

@@ -1,7 +1,9 @@
-import aiohttp
-from bs4 import BeautifulSoup
 import hashlib
-import asyncio
+
+import aiohttp
+from aiohttp import ClientTimeout
+from bs4 import BeautifulSoup
+
 
 class PlatformDetector:
     def __init__(self):
@@ -13,9 +15,9 @@ class PlatformDetector:
             return self._cache[cache_key]
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=10) as resp:
+                async with session.get(url, timeout=ClientTimeout(total=10)) as resp:
                     html = await resp.text()
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
 
             results = [
                 self._detect_shopify(html, soup, url),
@@ -39,23 +41,23 @@ class PlatformDetector:
 
     def _detect_shopify(self, html, soup, url):
         score = 0
-        if soup.find('script', src=lambda x: x and 'cdn.shopify.com' in x):
+        if soup.find("script", src=lambda x: x and "cdn.shopify.com" in x):
             score += 40
         if soup.find(attrs={"data-shopify": True}):
             score += 30
-        if '/cdn/shop/' in url:
+        if "/cdn/shop/" in url:
             score += 10
-        if 'Shopify.theme' in html:
+        if "Shopify.theme" in html:
             score += 20
         return ("shopify", min(score, 100))
 
     def _detect_woocommerce(self, html, soup, url):
         score = 0
-        if soup.find('body', class_=lambda c: c and 'woocommerce' in c):
+        if soup.find("body", class_=lambda c: c and "woocommerce" in c):
             score += 40
-        if soup.find('link', href=lambda x: x and 'woocommerce' in x):
+        if soup.find("link", href=lambda x: x and "woocommerce" in x):
             score += 20
-        if 'woocommerce' in html.lower():
+        if "woocommerce" in html.lower():
             score += 20
         if soup.select('.woocommerce, [class*="woocommerce"]'):
             score += 20
@@ -64,29 +66,29 @@ class PlatformDetector:
     def _detect_magento(self, html, soup, url):
         score = 0
         # Classic meta tag
-        if soup.find('meta', attrs={"name": "generator", "content": lambda x: x and 'Magento' in x}):
+        if soup.find("meta", attrs={"name": "generator", "content": lambda x: x and "Magento" in x}):
             score += 60
         # Magento JS/CSS static assets
-        if '/pub/static/frontend/' in html:
+        if "/pub/static/frontend/" in html:
             score += 30
         # <script type="text/x-magento-init">
-        if soup.find('script', attrs={"type": "text/x-magento-init"}):
+        if soup.find("script", attrs={"type": "text/x-magento-init"}):
             score += 30
         # data-mage-init attribute
         if soup.find(attrs={"data-mage-init": True}):
             score += 20
         # JS var require with baseUrl containing /pub/static/frontend/
-        if 'var require = {' in html and 'baseUrl' in html and '/pub/static/frontend/' in html:
+        if "var require = {" in html and "baseUrl" in html and "/pub/static/frontend/" in html:
             score += 20
         # Fallback: mage- classes or IDs
-        if 'mage-' in html:
+        if "mage-" in html:
             score += 10
         return ("magento", min(score, 100))
 
     def _detect_wordpress(self, html, soup, url):
         score = 0
-        wp_meta = soup.find('meta', attrs={"name": "generator", "content": lambda x: x and 'WordPress' in x})
-        wp_paths = '/wp-content/' in html or '/wp-includes/' in html
+        wp_meta = soup.find("meta", attrs={"name": "generator", "content": lambda x: x and "WordPress" in x})
+        wp_paths = "/wp-content/" in html or "/wp-includes/" in html
         if wp_meta:
             score += 40
         if wp_paths:
@@ -95,12 +97,8 @@ class PlatformDetector:
 
     def _detect_webflow(self, html, soup, url):
         score = 0
-        if soup.find('meta', attrs={"name": "generator", "content": lambda x: x and 'Webflow' in x}):
+        if soup.find("meta", attrs={"name": "generator", "content": lambda x: x and "Webflow" in x}):
             score += 60
-        if 'Webflow.require' in html:
+        if "Webflow.require" in html:
             score += 30
         return ("webflow", min(score, 100))
-
-# Example async usage:
-# detector = PlatformDetector()
-# platform, confidence = await detector.detect("https://some-ecommerce-site.com")

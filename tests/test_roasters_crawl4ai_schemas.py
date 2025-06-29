@@ -1,9 +1,9 @@
-import sys
 import os
-import pytest
+import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from scrapers.roasters_crawl4ai import schemas
+
 
 def test_contact_schema_structure():
     schema = schemas.CONTACT_SCHEMA

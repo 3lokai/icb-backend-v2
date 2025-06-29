@@ -6,15 +6,16 @@ Supports CSV and JSON export with configurable options.
 import csv
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Literal, Optional
+
 
 def export_to_csv(
     data: List[Dict[str, Any]],
     output_path: str,
     fieldnames: Optional[List[str]] = None,
     field_mapping: Optional[Dict[str, str]] = None,
-    extras_action: str = "ignore",
-    encoding: str = "utf-8-sig"
+    extras_action: Literal["ignore", "raise"] = "ignore",
+    encoding: str = "utf-8-sig",
 ) -> None:
     """
     Export a list of dictionaries to a CSV file with configurable field mapping.
@@ -48,12 +49,9 @@ def export_to_csv(
                 csv_row = {k: v for k, v in row.items() if k in fieldnames}
             writer.writerow(csv_row)
 
+
 def export_to_json(
-    data: Any,
-    output_path: str,
-    indent: Optional[int] = 2,
-    sort_keys: bool = False,
-    encoding: str = "utf-8"
+    data: Any, output_path: str, indent: Optional[int] = 2, sort_keys: bool = False, encoding: str = "utf-8"
 ) -> None:
     """
     Export data to a JSON file with formatting options.

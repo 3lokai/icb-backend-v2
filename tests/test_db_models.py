@@ -1,11 +1,13 @@
-import sys
 import os
-import pytest
+import sys
 from datetime import datetime
-from pydantic import ValidationError, HttpUrl
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pytest
+from pydantic import ValidationError
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from db import models
+
 
 def test_roastlevel_enum():
     assert "light" in models.RoastLevel.ALL
@@ -23,31 +25,18 @@ def test_processingmethod_enum():
 
 
 def test_roaster_model_valid():
-    r = models.Roaster(
-        name="Test Roaster",
-        slug="test-roaster",
-        website_url="https://test.com"
-    )
+    r = models.Roaster(name="Test Roaster", slug="test-roaster", website_url="https://test.com")
     assert r.name == "Test Roaster"
     assert str(r.website_url) == "https://test.com/"
 
 
 def test_roaster_model_invalid_url():
     with pytest.raises(ValidationError):
-        models.Roaster(
-            name="Test Roaster",
-            slug="test-roaster",
-            website_url="not-a-url"
-        )
+        models.Roaster(name="Test Roaster", slug="test-roaster", website_url="not-a-url")
 
 
 def test_coffee_model_valid():
-    c = models.Coffee(
-        name="Test Coffee",
-        slug="test-coffee",
-        roaster_id="r1",
-        direct_buy_url="https://buy.com"
-    )
+    c = models.Coffee(name="Test Coffee", slug="test-coffee", roaster_id="r1", direct_buy_url="https://buy.com")
     assert c.name == "Test Coffee"
     assert str(c.direct_buy_url) == "https://buy.com/"
 
@@ -58,7 +47,7 @@ def test_coffee_model_missing_required():
             name="Test Coffee",
             slug="test-coffee",
             # missing roaster_id
-            direct_buy_url="https://buy.com"
+            direct_buy_url="https://buy.com",
         )
 
 

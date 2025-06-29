@@ -1,9 +1,9 @@
-import pytest
-import sys
 import os
-import shutil
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from common import cache
+
 
 def test_scraper_cache_smoke(tmp_path):
     # Use a temp cache dir

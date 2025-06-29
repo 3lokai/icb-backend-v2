@@ -5,6 +5,8 @@ Handles all environment variables and project settings.
 
 import os
 from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
@@ -13,8 +15,8 @@ ENV = os.getenv("ENV", "dev")
 
 # Try to load environment-specific .env file first
 base_dir = Path(__file__).resolve().parent
-env_dotenv = base_dir / f'.env.{ENV}'
-default_dotenv = base_dir / '.env'
+env_dotenv = base_dir / f".env.{ENV}"
+default_dotenv = base_dir / ".env"
 if env_dotenv.exists():
     load_dotenv(dotenv_path=env_dotenv)
     print(f"Loaded environment: {ENV} from {env_dotenv}")
@@ -24,7 +26,7 @@ elif default_dotenv.exists():
 else:
     print(f"WARNING: No .env or .env.{ENV} file found in {base_dir}")
 
-    
+
 # Base project directory
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -32,11 +34,13 @@ BASE_DIR = Path(__file__).resolve().parent
 CACHE_DIR = Path(os.getenv("CACHE_DIR", "./cache"))
 CACHE_DIR.mkdir(exist_ok=True)
 
+
 class SupabaseConfig(BaseModel):
     """Supabase configuration settings."""
+
     url: str
     key: str
-    
+
     @classmethod
     def from_env(cls):
         url = os.getenv("SUPABASE_URL")
@@ -45,15 +49,20 @@ class SupabaseConfig(BaseModel):
             raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in the environment.")
         return cls(url=url, key=key)
 
+
 class ScraperConfig(BaseModel):
     """General scraper configuration settings."""
+
     user_agent: str
     request_timeout: int
-    
+
+
 class LLMConfig(BaseModel):
     """LLM API configuration for enrichment."""
-    openai_api_key: str = None
-    deepseek_api_key: str = None
+
+    openai_api_key: Optional[str] = None
+    deepseek_api_key: Optional[str] = None
+
 
 # Main configuration object
 class Config(BaseModel):
@@ -62,6 +71,7 @@ class Config(BaseModel):
     Loads and validates all environment variables and settings.
     Supports environment selection (dev, test, prod) via ENV variable.
     """
+
     supabase: SupabaseConfig
     scraper: ScraperConfig
     llm: LLMConfig
@@ -85,6 +95,7 @@ class Config(BaseModel):
                 deepseek_api_key=os.getenv("DEEPSEEK_API_KEY"),
             ),
         )
+
 
 # Create config instance for importing in other modules
 config = Config.from_env()

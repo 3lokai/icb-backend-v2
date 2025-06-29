@@ -1,0 +1,6 @@
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # Error, Pyflakes, Import sorting
+ignore = ["E501"]         # Line too long
