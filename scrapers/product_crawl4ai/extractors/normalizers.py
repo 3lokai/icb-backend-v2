@@ -32,6 +32,7 @@ def normalize_text(text: str) -> str:
     # Convert to lowercase
     return normalized.lower()
 
+
 def normalize_coffee_name(name: str) -> str:
     """
     Normalize coffee product name.
@@ -72,6 +73,7 @@ def normalize_coffee_name(name: str) -> str:
 
     return name
 
+
 def normalize_price(price: Any) -> Optional[float]:
     """
     Normalize price value to a float.
@@ -110,6 +112,7 @@ def normalize_price(price: Any) -> Optional[float]:
         logger.warning(f"Could not convert price '{price}' to float")
         return None
 
+
 def normalize_image_url(url: str) -> Optional[str]:
     """
     Normalize image URL.
@@ -138,6 +141,7 @@ def normalize_image_url(url: str) -> Optional[str]:
             url = url + ".jpg"
 
     return url
+
 
 def normalize_flavor_profiles(flavors: Union[str, List[str]]) -> List[str]:
     """
@@ -201,6 +205,7 @@ def normalize_flavor_profiles(flavors: Union[str, List[str]]) -> List[str]:
 
     return normalized
 
+
 def normalize_boolean_field(value: Any) -> Optional[bool]:
     """
     Normalize a value to a boolean.
@@ -236,6 +241,7 @@ def normalize_boolean_field(value: Any) -> Optional[bool]:
 
     # If we can't determine, return None
     return None
+
 
 def normalize_date(date_value: Union[str, datetime, None]) -> Optional[str]:
     """
@@ -278,6 +284,7 @@ def normalize_date(date_value: Union[str, datetime, None]) -> Optional[str]:
 
     return None
 
+
 def normalize_description(description: str) -> str:
     """
     Normalize product description text.
@@ -313,6 +320,7 @@ def normalize_description(description: str) -> str:
         description = re.sub(rf"{phrase}", "", description, flags=re.IGNORECASE)
 
     return description
+
 
 def normalize_coffee_data(coffee: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -376,6 +384,7 @@ def normalize_coffee_data(coffee: Dict[str, Any]) -> Dict[str, Any]:
         normalized["last_scraped_at"] = datetime.now().isoformat()
 
     return normalized
+
 
 def standardize_coffee_model(coffee: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -463,6 +472,7 @@ def standardize_coffee_model(coffee: Dict[str, Any]) -> Dict[str, Any]:
             standardized[field] = value
 
     return standardized
+
 
 def get_field_confidence(coffee: Dict[str, Any], field: str) -> float:
     """

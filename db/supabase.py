@@ -246,6 +246,12 @@ class SupabaseClient:
             if "id" in data and data["id"] is None:
                 del data["id"]
 
+            # Remove None values for related data fields that shouldn't be in main tables
+            related_fields_to_remove = ["prices", "brew_methods", "flavor_profiles", "external_links"]
+            for field in related_fields_to_remove:
+                if field in data and data[field] is None:
+                    del data[field]
+
             logger.info(f"Inserting new record into {table_name}")
             result = self.client.table(table_name).insert(data).execute()
 
@@ -324,18 +330,34 @@ class SupabaseClient:
                 logger.error(f"Error converting coffee dict to Coffee object: {e}")
                 return None
 
+        # Extract related data before upserting the main record
+        prices = coffee.prices
+        brew_methods = coffee.brew_methods
+        flavor_profiles = coffee.flavor_profiles
+        external_links = coffee.external_links
+
+        # Create a copy of the coffee object without related data for the main table upsert
+        coffee_data = coffee.model_dump(exclude_none=True, exclude={"prices", "brew_methods", "flavor_profiles", "external_links"})
+        coffee_for_upsert = Coffee(**coffee_data)
+        
+        # Explicitly set related data fields to None to ensure they're not included in the insert
+        coffee_for_upsert.prices = None
+        coffee_for_upsert.brew_methods = None
+        coffee_for_upsert.flavor_profiles = None
+        coffee_for_upsert.external_links = None
+
         # Handle region first if provided as a name instead of ID
-        if coffee.region_name and not coffee.region_id:
+        if coffee_for_upsert.region_name and not coffee_for_upsert.region_id:
             try:
-                result = self.client.rpc("upsert_region", {"region_name": coffee.region_name}).execute()
+                result = self.client.rpc("upsert_region", {"region_name": coffee_for_upsert.region_name}).execute()
                 if result.data:
-                    coffee.region_id = result.data[0]
+                    coffee_for_upsert.region_id = result.data[0]
             except Exception as e:
                 logger.warning(f"Error upserting region: {e}")
 
-        # Smart upsert for the coffee record
+        # Smart upsert for the coffee record (without related data)
         updated_coffee = self.upsert_model(
-            coffee,
+            coffee_for_upsert,
             table_name="coffees",
             protected_fields=["is_featured"],  # Protect manually featured coffees
         )
@@ -347,13 +369,13 @@ class SupabaseClient:
         coffee_id = updated_coffee.id
 
         # Handle prices if provided
-        if coffee.prices:
+        if prices:
             try:
                 # First delete existing prices for this coffee - prices are fully managed by scraper
                 self.client.table("coffee_prices").delete().eq("coffee_id", coffee_id).execute()
 
                 # Insert new prices
-                for price in coffee.prices:
+                for price in prices:
                     price_data = model_to_dict(price)
                     price_data["coffee_id"] = coffee_id
                     self.client.table("coffee_prices").insert(price_data).execute()
@@ -361,9 +383,9 @@ class SupabaseClient:
                 logger.warning(f"Error managing coffee prices: {e}")
 
         # Handle brew methods if provided
-        if coffee.brew_methods:
+        if brew_methods:
             # Use the existing Supabase function to upsert brew methods
-            for method in coffee.brew_methods:
+            for method in brew_methods:
                 try:
                     self.client.rpc(
                         "upsert_brew_method_and_link", {"coffee": coffee_id, "method_name": method}
@@ -372,18 +394,18 @@ class SupabaseClient:
                     logger.warning(f"Error upserting brew method: {e}")
 
         # Handle flavor profiles if provided
-        if coffee.flavor_profiles:
+        if flavor_profiles:
             # Use the existing Supabase function to upsert flavor profiles
-            for flavor in coffee.flavor_profiles:
+            for flavor in flavor_profiles:
                 try:
                     self.client.rpc("upsert_flavor_and_link", {"coffee": coffee_id, "flavor_name": flavor}).execute()
                 except Exception as e:
                     logger.warning(f"Error upserting flavor profile: {e}")
 
         # Handle external links if provided
-        if coffee.external_links:
+        if external_links:
             # Use the existing Supabase function to upsert external links
-            for link in coffee.external_links:
+            for link in external_links:
                 try:
                     self.client.rpc(
                         "upsert_external_link", {"coffee": coffee_id, "provider": link.provider, "link": str(link.url)}

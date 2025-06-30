@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def extract_roast_level(
-    text: str, tags: Optional[List[str]] = None, structured_data: Optional[Dict[str, Any]] = None, confidence_tracking: bool = True
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
 ) -> Tuple[Optional[str], float]:
     """
     Extract coffee roast level using multiple strategies with confidence scoring.
@@ -36,8 +39,15 @@ def extract_roast_level(
 
     # Strategy 2 (high confidence): Check product tags
     roast_patterns = [
-        (r"\b(light)\s+roast\b", "light", 0.9),
+        # Hyphenated patterns (common in Blue Tokai data)
+        (r"\b(light[\s-]*roast)\b", "light", 0.9),
+        (r"\b(medium[\s-]*roast)\b", "medium", 0.9),
+        (r"\b(medium[\s-]*dark[\s-]*roast)\b", "medium-dark", 0.9),
+        (r"\b(dark[\s-]*roast)\b", "dark", 0.9),
+        (r"\b(french[\s-]*roast)\b", "french", 0.9),
         (r"\b(light[\s-]*medium)\s+roast\b", "light-medium", 0.9),
+        # Non-hyphenated patterns
+        (r"\b(light)\s+roast\b", "light", 0.9),
         (r"\b(medium)\s+roast\b", "medium", 0.9),
         (r"\b(medium[\s-]*dark)\s+roast\b", "medium-dark", 0.9),
         (r"\b(dark)\s+roast\b", "dark", 0.9),
@@ -98,7 +108,10 @@ def extract_roast_level(
 
 
 def extract_bean_type(
-    text: str, tags: Optional[List[str]] = None, structured_data: Optional[Dict[str, Any]] = None, confidence_tracking: bool = True
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
 ) -> Tuple[Optional[str], float]:
     """
     Extract coffee bean type using multiple strategies with confidence scoring.
@@ -197,7 +210,10 @@ def extract_bean_type(
 
 
 def extract_processing_method(
-    text: str, tags: Optional[List[str]] = None, structured_data: Optional[Dict[str, Any]] = None, confidence_tracking: bool = True
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
 ) -> Tuple[Optional[str], float]:
     """
     Extract coffee processing method using multiple strategies with confidence scoring.
@@ -282,8 +298,457 @@ def extract_processing_method(
     return None, 0.0
 
 
+def extract_acidity_level(
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
+) -> Tuple[Optional[str], float]:
+    """
+    Extract coffee acidity level using multiple strategies with confidence scoring.
+
+    Args:
+        text: Product description or full product text
+        tags: List of product tags/categories (optional)
+        structured_data: Structured product data if available (optional)
+        confidence_tracking: Whether to track confidence scores
+
+    Returns:
+        Tuple of (acidity_level, confidence_score)
+    """
+    if tags is None:
+        tags = []
+
+    # Strategy 1 (highest confidence): Check dedicated attribute in structured data
+    if structured_data:
+        for attr_key in ["acidity", "acidity_level", "acidityLevel"]:
+            if attr_key in structured_data:
+                acidity = structured_data[attr_key]
+                if isinstance(acidity, str) and acidity.strip():
+                    return acidity.lower(), 0.95  # Very high confidence
+
+    # Strategy 2 (high confidence): Check product tags for acidity patterns
+    acidity_patterns = [
+        (r"\b(acidity[\s-]*low)\b", "low", 0.9),
+        (r"\b(acidity[\s-]*medium)\b", "medium", 0.9),
+        (r"\b(acidity[\s-]*high)\b", "high", 0.9),
+        (r"\b(acidity[\s-]*medium[\s-]*high)\b", "medium high", 0.9),
+        (r"\b(low[\s-]*acidity)\b", "low", 0.9),
+        (r"\b(medium[\s-]*acidity)\b", "medium", 0.9),
+        (r"\b(high[\s-]*acidity)\b", "high", 0.9),
+        (r"\b(bright[\s-]*acidity)\b", "bright", 0.85),
+        (r"\b(mellow[\s-]*acidity)\b", "mellow", 0.85),
+        (r"\b(crisp[\s-]*acidity)\b", "crisp", 0.85),
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern, acidity, confidence in acidity_patterns:
+            if re.search(pattern, tag_lower):
+                return acidity, confidence
+
+    # Strategy 3 (medium confidence): Look for acidity descriptions in text
+    acidity_descriptions = [
+        (r"\b(?:acidity|acidic)\s+(?:is\s+)?(low|medium|high|bright|mellow|crisp)\b", 0.8),
+        (r"\b(low|medium|high|bright|mellow|crisp)\s+(?:acidity|acidic)\b", 0.8),
+        (r"\b(?:with\s+)?(low|medium|high|bright|mellow|crisp)\s+(?:acidity|acidic)\s+(?:profile|character)\b", 0.75),
+    ]
+
+    for pattern, confidence in acidity_descriptions:
+        match = re.search(pattern, text.lower())
+        if match:
+            acidity = match.group(1).strip()
+            return acidity, confidence
+
+    # Strategy 4 (lower confidence): Look for acidity-related words in context
+    acidity_keywords = [
+        ("bright", "bright", 0.6),
+        ("crisp", "crisp", 0.6),
+        ("mellow", "mellow", 0.6),
+        ("low acidity", "low", 0.7),
+        ("medium acidity", "medium", 0.7),
+        ("high acidity", "high", 0.7),
+    ]
+
+    for keyword, acidity, confidence in acidity_keywords:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", text.lower()):
+            return acidity, confidence
+
+    # No acidity level found
+    return None, 0.0
+
+
+def extract_sweetness_level(
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
+) -> Tuple[Optional[str], float]:
+    """
+    Extract coffee sweetness level using multiple strategies with confidence scoring.
+    Can also infer from bitterness (opposite relationship).
+
+    Args:
+        text: Product description or full product text
+        tags: List of product tags/categories (optional)
+        structured_data: Structured product data if available (optional)
+        confidence_tracking: Whether to track confidence scores
+
+    Returns:
+        Tuple of (sweetness_level, confidence_score)
+    """
+    if tags is None:
+        tags = []
+
+    # Strategy 1 (highest confidence): Check dedicated attribute in structured data
+    if structured_data:
+        for attr_key in ["sweetness", "sweetness_level", "sweetnessLevel"]:
+            if attr_key in structured_data:
+                sweetness = structured_data[attr_key]
+                if isinstance(sweetness, str) and sweetness.strip():
+                    return sweetness.lower(), 0.95  # Very high confidence
+
+    # Strategy 2 (high confidence): Check product tags for sweetness patterns
+    sweetness_patterns = [
+        (r"\b(sweetness[\s-]*low)\b", "low", 0.9),
+        (r"\b(sweetness[\s-]*medium)\b", "medium", 0.9),
+        (r"\b(sweetness[\s-]*high)\b", "high", 0.9),
+        (r"\b(sweetness[\s-]*medium[\s-]*high)\b", "medium high", 0.9),
+        (r"\b(low[\s-]*sweetness)\b", "low", 0.9),
+        (r"\b(medium[\s-]*sweetness)\b", "medium", 0.9),
+        (r"\b(high[\s-]*sweetness)\b", "high", 0.9),
+        (r"\b(medium[\s-]*high[\s-]*sweetness)\b", "medium high", 0.9),
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern, sweetness, confidence in sweetness_patterns:
+            if re.search(pattern, tag_lower):
+                return sweetness, confidence
+
+    # Strategy 3 (medium confidence): Infer from bitterness (opposite relationship)
+    bitterness_patterns = [
+        (r"\b(bitterness[\s-]*low)\b", "high", 0.7),  # Low bitterness = high sweetness
+        (r"\b(bitterness[\s-]*medium)\b", "medium", 0.7),
+        (r"\b(bitterness[\s-]*high)\b", "low", 0.7),  # High bitterness = low sweetness
+        (r"\b(bitterness[\s-]*medium[\s-]*high)\b", "low", 0.7),
+        (r"\b(low[\s-]*bitterness)\b", "high", 0.7),
+        (r"\b(medium[\s-]*bitterness)\b", "medium", 0.7),
+        (r"\b(high[\s-]*bitterness)\b", "low", 0.7),
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern, sweetness, confidence in bitterness_patterns:
+            if re.search(pattern, tag_lower):
+                return sweetness, confidence
+
+    # Strategy 4 (medium confidence): Look for sweetness descriptions in text
+    sweetness_descriptions = [
+        (r"\b(?:sweetness|sweet)\s+(?:is\s+)?(low|medium|high|bright|mellow)\b", 0.8),
+        (r"\b(low|medium|high|bright|mellow)\s+(?:sweetness|sweet)\b", 0.8),
+        (r"\b(?:with\s+)?(low|medium|high|bright|mellow)\s+(?:sweetness|sweet)\s+(?:profile|character)\b", 0.75),
+    ]
+
+    for pattern, confidence in sweetness_descriptions:
+        match = re.search(pattern, text.lower())
+        if match:
+            sweetness = match.group(1).strip()
+            return sweetness, confidence
+
+    # Strategy 5 (lower confidence): Look for sweetness-related words in context
+    sweetness_keywords = [
+        ("honey-like", "high", 0.7),
+        ("caramel", "high", 0.7),
+        ("brown sugar", "high", 0.7),
+        ("maple", "high", 0.7),
+        ("molasses", "high", 0.7),
+        ("toffee", "high", 0.7),
+        ("butterscotch", "high", 0.7),
+    ]
+
+    for keyword, sweetness, confidence in sweetness_keywords:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", text.lower()):
+            return sweetness, confidence
+
+    # No sweetness level found
+    return None, 0.0
+
+
+def extract_body_level(
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
+) -> Tuple[Optional[str], float]:
+    """
+    Extract coffee body level using multiple strategies with confidence scoring.
+
+    Args:
+        text: Product description or full product text
+        tags: List of product tags/categories (optional)
+        structured_data: Structured product data if available (optional)
+        confidence_tracking: Whether to track confidence scores
+
+    Returns:
+        Tuple of (body_level, confidence_score)
+    """
+    if tags is None:
+        tags = []
+
+    # Strategy 1 (highest confidence): Check dedicated attribute in structured data
+    if structured_data:
+        for attr_key in ["body", "body_level", "bodyLevel"]:
+            if attr_key in structured_data:
+                body = structured_data[attr_key]
+                if isinstance(body, str) and body.strip():
+                    return body.lower(), 0.95  # Very high confidence
+
+    # Strategy 2 (high confidence): Check product tags for body patterns
+    body_patterns = [
+        (r"\b(body[\s-]*light)\b", "light", 0.9),
+        (r"\b(body[\s-]*medium)\b", "medium", 0.9),
+        (r"\b(body[\s-]*high)\b", "high", 0.9),
+        (r"\b(body[\s-]*full)\b", "full", 0.9),
+        (r"\b(light[\s-]*body)\b", "light", 0.9),
+        (r"\b(medium[\s-]*body)\b", "medium", 0.9),
+        (r"\b(heavy[\s-]*body)\b", "full", 0.9),
+        (r"\b(full[\s-]*body)\b", "full", 0.9),
+        (r"\b(syrupy[\s-]*body)\b", "full", 0.85),
+        (r"\b(tea[\s-]*like[\s-]*body)\b", "light", 0.85),
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern, body, confidence in body_patterns:
+            if re.search(pattern, tag_lower):
+                return body, confidence
+
+    # Strategy 3 (medium confidence): Look for body descriptions in text
+    body_descriptions = [
+        (r"\b(?:body|mouthfeel)\s+(?:is\s+)?(light|medium|heavy|full|syrupy|tea[\s-]*like)\b", 0.8),
+        (r"\b(light|medium|heavy|full|syrupy|tea[\s-]*like)\s+(?:body|mouthfeel)\b", 0.8),
+        (r"\b(?:with\s+)?(light|medium|heavy|full|syrupy|tea[\s-]*like)\s+(?:body|mouthfeel)\s+(?:profile|character)\b", 0.75),
+    ]
+
+    for pattern, confidence in body_descriptions:
+        match = re.search(pattern, text.lower())
+        if match:
+            body = match.group(1).strip()
+            return body, confidence
+
+    # Strategy 4 (lower confidence): Look for body-related words in context
+    body_keywords = [
+        ("syrupy", "full", 0.7),
+        ("velvety", "full", 0.7),
+        ("heavy", "full", 0.7),
+        ("full-bodied", "full", 0.7),
+        ("tea-like", "light", 0.7),
+        ("thin", "light", 0.7),
+        ("light-bodied", "light", 0.7),
+    ]
+
+    for keyword, body, confidence in body_keywords:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", text.lower()):
+            return body, confidence
+
+    # No body level found
+    return None, 0.0
+
+
+def extract_aroma_description(
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
+) -> Tuple[Optional[str], float]:
+    """
+    Extract coffee aroma description using multiple strategies with confidence scoring.
+
+    Args:
+        text: Product description or full product text
+        tags: List of product tags/categories (optional)
+        structured_data: Structured product data if available (optional)
+        confidence_tracking: Whether to track confidence scores
+
+    Returns:
+        Tuple of (aroma_description, confidence_score)
+    """
+    if tags is None:
+        tags = []
+
+    # Strategy 1 (highest confidence): Check dedicated attribute in structured data
+    if structured_data:
+        for attr_key in ["aroma", "aroma_description", "aromaDescription"]:
+            if attr_key in structured_data:
+                aroma = structured_data[attr_key]
+                if isinstance(aroma, str) and aroma.strip():
+                    return aroma.lower(), 0.95  # Very high confidence
+
+    # Strategy 2 (high confidence): Check product tags for aroma patterns
+    aroma_patterns = [
+        (r"\b(aroma[\s-]*floral)\b", "floral", 0.9),
+        (r"\b(aroma[\s-]*nutty)\b", "nutty", 0.9),
+        (r"\b(aroma[\s-]*spicy)\b", "spicy", 0.9),
+        (r"\b(aroma[\s-]*chocolaty)\b", "chocolaty", 0.9),
+        (r"\b(aroma[\s-]*fruity)\b", "fruity", 0.9),
+        (r"\b(aroma[\s-]*earthy)\b", "earthy", 0.9),
+        (r"\b(aroma[\s-]*woody)\b", "woody", 0.9),
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern, aroma, confidence in aroma_patterns:
+            if re.search(pattern, tag_lower):
+                return aroma, confidence
+
+    # Strategy 3 (medium confidence): Look for aroma descriptions in text
+    aroma_descriptions = [
+        (r"\b(?:aroma|fragrance|smell)\s+(?:of|is)\s+([\w\s]+)\b", 0.8),
+        (r"\b(?:with|has)\s+(?:aroma|fragrance|smell)\s+of\s+([\w\s]+)\b", 0.8),
+        (r"\b(?:aroma|fragrance|smell)\s+(?:notes?|profile)\s+(?:of|include)\s+([\w\s]+)\b", 0.75),
+    ]
+
+    for pattern, confidence in aroma_descriptions:
+        match = re.search(pattern, text.lower())
+        if match:
+            aroma = match.group(1).strip()
+            # Clean up the aroma description
+            aroma = re.sub(r'\b(and|with|notes?|profile|include)\b', '', aroma).strip()
+            if aroma:
+                return aroma, confidence
+
+    # Strategy 4 (lower confidence): Look for common aroma words in context
+    aroma_keywords = [
+        ("floral", "floral", 0.6),
+        ("nutty", "nutty", 0.6),
+        ("spicy", "spicy", 0.6),
+        ("chocolaty", "chocolaty", 0.6),
+        ("fruity", "fruity", 0.6),
+        ("earthy", "earthy", 0.6),
+        ("woody", "woody", 0.6),
+        ("jasmine", "floral", 0.7),
+        ("rose", "floral", 0.7),
+        ("cinnamon", "spicy", 0.7),
+        ("vanilla", "sweet", 0.7),
+    ]
+
+    for keyword, aroma, confidence in aroma_keywords:
+        if re.search(r"\b" + re.escape(keyword) + r"\b", text.lower()):
+            return aroma, confidence
+
+    # No aroma description found
+    return None, 0.0
+
+
+def detect_with_milk_suitable(
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
+) -> Tuple[Optional[bool], float]:
+    """
+    Detect if coffee is suitable with milk using multiple strategies with confidence scoring.
+
+    Args:
+        text: Product description or full product text
+        tags: List of product tags/categories (optional)
+        structured_data: Structured product data if available (optional)
+        confidence_tracking: Whether to track confidence scores
+
+    Returns:
+        Tuple of (with_milk_suitable, confidence_score)
+    """
+    if tags is None:
+        tags = []
+
+    # Strategy 1 (highest confidence): Check dedicated attribute in structured data
+    if structured_data:
+        for attr_key in ["with_milk_suitable", "milk_suitable", "milkSuitable"]:
+            if attr_key in structured_data:
+                milk_suitable = structured_data[attr_key]
+                if isinstance(milk_suitable, bool):
+                    return milk_suitable, 0.95  # Very high confidence
+                elif isinstance(milk_suitable, str):
+                    val_lower = milk_suitable.lower()
+                    return val_lower in ["true", "yes", "1", "suitable"], 0.9
+
+    # Strategy 2 (high confidence): Check product tags for milk suitability
+    milk_positive_patterns = [
+        r"\b(with[\s-]*milk)\b",
+        r"\b(milk[\s-]*suitable)\b",
+        r"\b(suitable[\s-]*with[\s-]*milk)\b",
+        r"\b(good[\s-]*with[\s-]*milk)\b",
+        r"\b(perfect[\s-]*with[\s-]*milk)\b",
+        r"\b(espresso[\s-]*based)\b",  # Espresso-based drinks usually work with milk
+        r"\b(latte)\b",
+        r"\b(cappuccino)\b",
+        r"\b(macchiato)\b",
+    ]
+
+    milk_negative_patterns = [
+        r"\b(black[\s-]*only)\b",
+        r"\b(not[\s-]*with[\s-]*milk)\b",
+        r"\b(avoid[\s-]*milk)\b",
+        r"\b(no[\s-]*milk)\b",
+        r"\b(pour[\s-]*over)\b",  # Pour over is typically black
+        r"\b(aeropress)\b",  # Aeropress is typically black
+    ]
+
+    for tag in tags:
+        tag_lower = tag.lower().strip()
+        for pattern in milk_positive_patterns:
+            if re.search(pattern, tag_lower):
+                return True, 0.9
+        for pattern in milk_negative_patterns:
+            if re.search(pattern, tag_lower):
+                return False, 0.9
+
+    # Strategy 3 (medium confidence): Look for milk suitability in description
+    milk_positive_text = [
+        r"\b(?:with|in)\s+milk\b",
+        r"\b(?:suitable|good|perfect)\s+(?:with|for)\s+milk\b",
+        r"\b(?:espresso[\s-]*based)\b",
+        r"\b(?:latte|cappuccino|macchiato)\b",
+        r"\b(?:milk[\s-]*drinks?)\b",
+        r"\b(?:creamy|smooth)\s+(?:with|in)\s+milk\b",
+    ]
+
+    milk_negative_text = [
+        r"\b(?:black[\s-]*only)\b",
+        r"\b(?:not[\s-]*suitable[\s-]*with[\s-]*milk)\b",
+        r"\b(?:avoid[\s-]*milk)\b",
+        r"\b(?:no[\s-]*milk)\b",
+        r"\b(?:best[\s-]*black)\b",
+        r"\b(?:drink[\s-]*black)\b",
+    ]
+
+    for pattern in milk_positive_text:
+        if re.search(pattern, text.lower()):
+            return True, 0.8
+
+    for pattern in milk_negative_text:
+        if re.search(pattern, text.lower()):
+            return False, 0.8
+
+    # Strategy 4 (lower confidence): Infer from roast level and brew methods
+    # Darker roasts are generally better with milk
+    if re.search(r"\b(?:dark|french|italian)\s+roast\b", text.lower()):
+        return True, 0.6
+
+    # Lighter roasts are generally better black
+    if re.search(r"\b(?:light|medium)\s+roast\b", text.lower()):
+        return False, 0.6
+
+    # No clear indication found
+    return None, 0.0
+
+
 def extract_flavor_profiles(
-    text: str, tags: Optional[List[str]] = None, structured_data: Optional[Dict[str, Any]] = None, confidence_tracking: bool = True
+    text: str,
+    tags: Optional[List[str]] = None,
+    structured_data: Optional[Dict[str, Any]] = None,
+    confidence_tracking: bool = True,
 ) -> Tuple[Optional[List[str]], float]:
     """
     Extract coffee flavor profiles using multiple strategies with confidence scoring.
@@ -610,6 +1075,34 @@ def extract_all_attributes(
         if confidence_tracking:
             coffee["confidence_scores"]["processing_method"] = confidence
 
+    # Extract acidity level
+    acidity, confidence = extract_acidity_level(text, tags, structured_data, confidence_tracking)
+    if acidity:
+        coffee["acidity"] = acidity
+        if confidence_tracking:
+            coffee["confidence_scores"]["acidity"] = confidence
+
+    # Extract sweetness level
+    sweetness, confidence = extract_sweetness_level(text, tags, structured_data, confidence_tracking)
+    if sweetness:
+        coffee["sweetness"] = sweetness
+        if confidence_tracking:
+            coffee["confidence_scores"]["sweetness"] = confidence
+
+    # Extract body level
+    body, confidence = extract_body_level(text, tags, structured_data, confidence_tracking)
+    if body:
+        coffee["body"] = body
+        if confidence_tracking:
+            coffee["confidence_scores"]["body"] = confidence
+
+    # Extract aroma description
+    aroma, confidence = extract_aroma_description(text, tags, structured_data, confidence_tracking)
+    if aroma:
+        coffee["aroma"] = aroma
+        if confidence_tracking:
+            coffee["confidence_scores"]["aroma"] = confidence
+
     # Extract flavor profiles
     flavor_profiles, confidence = extract_flavor_profiles(text, tags, structured_data, confidence_tracking)
     if flavor_profiles:
@@ -623,6 +1116,9 @@ def extract_all_attributes(
         coffee["is_single_origin"] = is_single_origin
         if confidence_tracking:
             coffee["confidence_scores"]["is_single_origin"] = confidence
+    else:
+        # Default to False if we can't determine
+        coffee["is_single_origin"] = False
 
     # Detect if seasonal
     is_seasonal, confidence = detect_is_seasonal(name, text, tags, confidence_tracking)
@@ -650,7 +1146,7 @@ def extract_all_attributes(
     # Set is_blend flag based on all available information
     if "bean_type" in coffee and coffee["bean_type"] == "blend":
         blend_detected = True
-    elif "is_single_origin" in coffee and coffee["is_single_origin"] == False:
+    elif "is_single_origin" in coffee and not coffee["is_single_origin"]:
         blend_detected = True
     elif "blend" in name.lower():
         blend_detected = True
@@ -659,5 +1155,12 @@ def extract_all_attributes(
         coffee["is_blend"] = True
         if "is_single_origin" not in coffee:
             coffee["is_single_origin"] = False
+
+    # Detect if suitable with milk
+    with_milk_suitable, confidence = detect_with_milk_suitable(text, tags, structured_data, confidence_tracking)
+    if with_milk_suitable is not None:
+        coffee["with_milk_suitable"] = with_milk_suitable
+        if confidence_tracking:
+            coffee["confidence_scores"]["with_milk_suitable"] = confidence
 
     return coffee

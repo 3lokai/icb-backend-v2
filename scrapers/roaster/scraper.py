@@ -9,8 +9,8 @@ import httpx
 from bs4 import BeautifulSoup
 
 from common.cache import cache
-from common.platform_detector import detect_platform
-from common.utils import clean_html, create_slug
+from common.platform_detector import PlatformDetector
+from common.utils import clean_html, slugify
 
 from .about import extract_about_page_info, update_with_about_data
 from .crawl4ai_enricher import enrich_roaster_data_with_crawl4ai
@@ -36,6 +36,7 @@ class RoasterScraper:
     def __init__(self, enrichment_service=None):
         """Initialize roaster scraper."""
         self.enrichment_service = enrichment_service
+        self.platform_detector = PlatformDetector()
 
         # Fields and their stability ratings (for incremental updates)
         self.field_stability = {
@@ -61,7 +62,7 @@ class RoasterScraper:
         logger.info(f"Scraping roaster: {name} ({url})")
 
         # Initialize data structure
-        roaster_data = {"name": name, "website_url": url, "slug": create_slug(name), "confidence": {}}
+        roaster_data = {"name": name, "website_url": url, "slug": slugify(name), "confidence": {}}
 
         # Check if site is active
         site_status = await self._check_site_activity(url)
@@ -78,7 +79,7 @@ class RoasterScraper:
             soup = BeautifulSoup(html_content, "html.parser")
 
             # Detect platform - call only once and pass to other functions
-            platform = await detect_platform(url)
+            platform, confidence = self.platform_detector.detect(url)
             roaster_data["platform"] = platform
 
             # Extract basic info - pass platform parameter

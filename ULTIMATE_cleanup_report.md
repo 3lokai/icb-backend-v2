@@ -4,8 +4,8 @@
 
 ## Executive Summary
 
-- **MyPy Issues**: 17 files with type issues
-- **Ruff Issues**: 3 categories with problems
+- **MyPy Issues**: 16 files with type issues
+- **Ruff Issues**: 5 categories with problems
 - **Coffee-Specific Issues**: 8 found
 
 ## Coffee Scraper Specific Issues (TOP PRIORITY)
@@ -29,15 +29,14 @@ scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type ann
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
-scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
-scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\shopify.py:165: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\shopify.py:171: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\shopify.py:542: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
 scrapers\roasters_crawl4ai\crawler.py:184: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roasters_crawl4ai\crawler.py:268: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roasters_crawl4ai\batch.py:28: error: Need type annotation for "_calls" (hint: "_calls: list[<type>] = ...")  [var-annotated]
-Found 14 errors in 6 files (checked 1 source file)
+Found 13 errors in 6 files (checked 1 source file)
 
 ```
 
@@ -64,6 +63,7 @@ Success: no issues found in 1 source file
 scrapers\roaster\selectors.py:4: error: Incompatible default for argument "platform" (default has type "None", argument has type "str")  [assignment]
 scrapers\roaster\selectors.py:4: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
 scrapers\roaster\selectors.py:4: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+scrapers\product_crawl4ai\extractors\validators.py:386: error: Need type annotation for "results" (hint: "results: list[<type>] = ...")  [var-annotated]
 scrapers\roaster\crawl4ai_enricher.py:24: error: Cannot assign to a type  [misc]
 scrapers\roaster\crawl4ai_enricher.py:24: error: Incompatible types in assignment (expression has type "type[object]", variable has type "type[BaseModel]")  [assignment]
 scrapers\roaster\crawl4ai_enricher.py:25: error: Incompatible types in assignment (expression has type "Callable[[VarArg(Any), KwArg(Any)], None]", variable has type overloaded function)  [assignment]
@@ -77,43 +77,22 @@ scrapers\roaster\location.py:9: note: (or run "mypy --install-types" to install 
 scrapers\roaster\location.py:9: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
 common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
+scrapers\product_crawl4ai\extractors\normalizers.py:442: error: Incompatible types in assignment (expression has type "float", target has type "str")  [assignment]
+scrapers\product_crawl4ai\extractors\normalizers.py:446: error: Incompatible types in assignment (expression has type "bool", target has type "str")  [assignment]
+scrapers\product_crawl4ai\extractors\normalizers.py:449: error: Incompatible types in assignment (expression has type "list[Any]", target has type "str")  [assignment]
+scrapers\product_crawl4ai\extractors\normalizers.py:454: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
 scrapers\roaster\about.py:19: error: Need type annotation for "about_data" (hint: "about_data: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
-scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
-scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\shopify.py:165: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\shopify.py:171: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\shopify.py:542: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roaster\scraper.py:12: error: Module "common.platform_detector" has no attribute "detect_platform"  [attr-defined]
 scrapers\roaster\scraper.py:13: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
 scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
-scrapers\roaster\batch.py:15: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
-scrapers\roaster\batch.py:15: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roaster\batch.py:15: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roaster\batch.py:15: error: Incompatible default for argument "limit" (default has type "None", argument has type "int")  [assignment]
-Found 25 errors in 10 files (checked 1 source file)
-
-```
-
-### run_all_product_scrapers.py
-```
-common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
-common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
-scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
-scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
-scrapers\roasters_crawl4ai\crawler.py:184: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\crawler.py:268: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:28: error: Need type annotation for "_calls" (hint: "_calls: list[<type>] = ...")  [var-annotated]
-Found 14 errors in 6 files (checked 1 source file)
+Found 27 errors in 11 files (checked 1 source file)
 
 ```
 
@@ -159,6 +138,14 @@ Success: no issues found in 1 source file
 
 ```
 
+### push_to_supabase.py
+```
+common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
+common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
+Found 2 errors in 1 file (checked 1 source file)
+
+```
+
 ### triage-errors.py
 ```
 triage-errors.py:17: error: Need type annotation for "errors_by_type"  [var-annotated]
@@ -197,104 +184,159 @@ Success: no issues found in 1 source file
 
 ```
 
-### common\pydantic_utils.py
-```
-common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
-common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
-Found 2 errors in 1 file (checked 1 source file)
-
-```
-
 ## Ruff Linting Results
 
 ### Basic Issues
 ```
-main.py:451:14: F821 Undefined name `json`
-    |
-449 |             click.echo(f"Wrote {len(roasters)} roasters to {output}")
-450 |
-451 |         elif json:
-    |              ^^^^ F821
-452 |             # Output as JSON using standardized exporter
-453 |             json_output = json_output or "roasters.json"
-    |
-
-main.py:453:27: F821 Undefined name `json_output`
-    |
-451 |         elif json:
-452 |             # Output as JSON using standardized exporter
-453 |             json_output = json_output or "roasters.json"
-    |                           ^^^^^^^^^^^ F821
-454 |             export_to_json(
-455 |                 [
-    |
-
-main.py:551:41: F821 Undefined name `scraper`
-    |
-550 |                         # Scrape products
-551 |                         results = await scraper.scrape_products(
-    |                                         ^^^^^^^ F821
-552 |                             roaster_id=roaster.id,
-553 |                             url=str(roaster.website_url),  # Ensure URL is string
-    |
-
-run_product_scraper.py:59:32: F821 Undefined name `scrape_roasters`
+push_to_supabase.py:7:1: I001 [*] Import block is un-sorted or un-formatted
    |
-57 |             return asyncio.run(scrape_roaster_link(args))
-58 |         else:
-59 |             return asyncio.run(scrape_roasters(args))
-   |                                ^^^^^^^^^^^^^^^ F821
-60 |     elif args.command == "url":
-61 |         return asyncio.run(scrape_single_url(args))
+ 5 |   """
+ 6 |
+ 7 | / import argparse
+ 8 | | import json
+ 9 | | import sys
+10 | | from pathlib import Path
+11 | | from typing import List, Dict, Any
+12 | |
+13 | | from loguru import logger
+14 | |
+15 | | from db.supabase import supabase
+16 | | from db.models import Roaster, Coffee
+17 | | from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
+   | |________________________________________________________________________________^ I001
    |
+   = help: Organize imports
 
-run_product_scraper.py:61:28: F821 Undefined name `scrape_single_url`
+push_to_supabase.py:11:20: F401 [*] `typing.List` imported but unused
    |
-59 |             return asyncio.run(scrape_roasters(args))
-60 |     elif args.command == "url":
-61 |         return asyncio.run(scrape_single_url(args))
-   |                            ^^^^^^^^^^^^^^^^^ F821
-62 |     elif args.command == "validate":
-63 |         # Handle validation command
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                    ^^^^ F401
+12 |
+13 | from loguru import logger
    |
+   = help: Remove unused import
 
-run_product_scraper.py:140:28: F821 Undefined name `standardize_coffee_model`
-    |
-138 |         for product in products:
-139 |             # Standardize model
-140 |             standardized = standardize_coffee_model(product)
-    |                            ^^^^^^^^^^^^^^^^^^^^^^^^ F821
-141 |
-142 |             # Validate fields
-    |
+push_to_supabase.py:11:26: F401 [*] `typing.Dict` imported but unused
+   |
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                          ^^^^ F401
+12 |
+13 | from loguru import logger
+   |
+   = help: Remove unused import
 
-run_product_scraper.py:143:34: F821 Undefined name `validate_coffee_product`
-    |
-142 |             # Validate fields
-143 |             validation_results = validate_coffee_product(standardized)
-    |                                  ^^^^^^^^^^^^^^^^^^^^^^^ F821
-144 |             fixed = apply_validation_corrections(standardized, validation_results)
-    |
+push_to_supabase.py:11:32: F401 [*] `typing.Any` imported but unused
+   |
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                                ^^^ F401
+12 |
+13 | from loguru import logger
+   |
+   = help: Remove unused import
 
-run_product_scraper.py:144:21: F821 Undefined name `apply_validation_corrections`
-    |
-142 |             # Validate fields
-143 |             validation_results = validate_coffee_product(standardized)
-144 |             fixed = apply_validation_corrections(standardized, validation_results)
-    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ F821
-145 |
-146 |             fixed_products.append(fixed)
-    |
+refactored\shopify_refactored.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 2 | / import requests
+ 3 | | import pandas as pd
+ 4 | | from slugify import slugify
+ 5 | |
+ 6 | | from scrapers.product_crawl4ai.extractors.normalizers import normalize_tags, normalize_description
+ 7 | | from scrapers.product_crawl4ai.extractors.price import extract_prices_from_shopify_product
+ 8 | | from scrapers.product_crawl4ai.enrichment import enrich_coffee_product
+ 9 | | from db.models import Coffee, CoffeePrice
+10 | | from common.utils import is_coffee_product
+   | |__________________________________________^ I001
+11 |
+12 |   def fetch_shopify_products(shop_url: str) -> list:
+   |
+   = help: Organize imports
 
-scrapers\product_crawl4ai\api_extractors\shopify.py:389:32: F821 Undefined name `extract_brew_methods_from_grind_size`
+run_product_scraper.py:20:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+18 |   """
+19 |
+20 | / import argparse
+21 | | import asyncio
+22 | | import json
+23 | | import sys
+24 | | from pathlib import Path
+25 | | from typing import List, Dict, Any
+26 | |
+27 | | from loguru import logger
+28 | |
+29 | | from scrapers.product_crawl4ai.scraper import ProductScraper
+30 | | from scrapers.product_crawl4ai.extractors.normalizers import standardize_coffee_model
+31 | | from scrapers.product_crawl4ai.extractors.validators import validate_coffee_product, apply_validation_corrections
+   | |_________________________________________________________________________________________________________________^ I001
+   |
+   = help: Organize imports
+
+run_product_scraper.py:25:20: F401 [*] `typing.List` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                    ^^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+run_product_scraper.py:25:26: F401 [*] `typing.Dict` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                          ^^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+run_product_scraper.py:25:32: F401 [*] `typing.Any` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                                ^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+scrapers\product_crawl4ai\extractors\attributes.py:653:43: E712 Avoid equality comparisons to `False`; use `not coffee["is_single_origin"]:` for false checks
     |
-387 |         if any(term in option.get("name", "").lower() for term in ["grind", "grind size", "grind-size"]):
-388 |             for value in option.get("values", []):
-389 |                 brew_methods = extract_brew_methods_from_grind_size(value)
-    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ F821
-390 |                 if brew_methods:
-391 |                     if not product["brew_methods"]:
+651 |     if "bean_type" in coffee and coffee["bean_type"] == "blend":
+652 |         blend_detected = True
+653 |     elif "is_single_origin" in coffee and coffee["is_single_origin"] == False:
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E712
+654 |         blend_detected = True
+655 |     elif "blend" in name.lower():
     |
+    = help: Replace with `not coffee["is_single_origin"]`
+
+scrapers\roaster\batch.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   """Batch processing for roaster scraping."""
+ 2 |
+ 3 | / import csv
+ 4 | | import json
+ 5 | | import logging
+ 6 | | from pathlib import Path
+ 7 | | from typing import Any, Dict, List, Tuple, Optional
+ 8 | |
+ 9 | | from .scraper import RoasterScraper
+   | |___________________________________^ I001
+10 |
+11 |   logger = logging.getLogger(__name__)
+   |
+   = help: Organize imports
 
 scrapers\roaster\crawl4ai_enricher.py:25:5: E731 Do not assign a `lambda` expression, use a `def`
    |
@@ -305,14 +347,163 @@ scrapers\roaster\crawl4ai_enricher.py:25:5: E731 Do not assign a `lambda` expres
    |
    = help: Rewrite `Field` as a `def`
 
-Found 10 errors.
-No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+Found 12 errors.
+[*] 10 fixable with the `--fix` option (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
 
 ```
 
-### Imports - Clean!
+### Imports Issues
+```
+push_to_supabase.py:7:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 5 |   """
+ 6 |
+ 7 | / import argparse
+ 8 | | import json
+ 9 | | import sys
+10 | | from pathlib import Path
+11 | | from typing import List, Dict, Any
+12 | |
+13 | | from loguru import logger
+14 | |
+15 | | from db.supabase import supabase
+16 | | from db.models import Roaster, Coffee
+17 | | from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
+   | |________________________________________________________________________________^ I001
+   |
+   = help: Organize imports
 
-### Unused - Clean!
+refactored\shopify_refactored.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 2 | / import requests
+ 3 | | import pandas as pd
+ 4 | | from slugify import slugify
+ 5 | |
+ 6 | | from scrapers.product_crawl4ai.extractors.normalizers import normalize_tags, normalize_description
+ 7 | | from scrapers.product_crawl4ai.extractors.price import extract_prices_from_shopify_product
+ 8 | | from scrapers.product_crawl4ai.enrichment import enrich_coffee_product
+ 9 | | from db.models import Coffee, CoffeePrice
+10 | | from common.utils import is_coffee_product
+   | |__________________________________________^ I001
+11 |
+12 |   def fetch_shopify_products(shop_url: str) -> list:
+   |
+   = help: Organize imports
+
+run_product_scraper.py:20:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+18 |   """
+19 |
+20 | / import argparse
+21 | | import asyncio
+22 | | import json
+23 | | import sys
+24 | | from pathlib import Path
+25 | | from typing import List, Dict, Any
+26 | |
+27 | | from loguru import logger
+28 | |
+29 | | from scrapers.product_crawl4ai.scraper import ProductScraper
+30 | | from scrapers.product_crawl4ai.extractors.normalizers import standardize_coffee_model
+31 | | from scrapers.product_crawl4ai.extractors.validators import validate_coffee_product, apply_validation_corrections
+   | |_________________________________________________________________________________________________________________^ I001
+   |
+   = help: Organize imports
+
+scrapers\roaster\batch.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   """Batch processing for roaster scraping."""
+ 2 |
+ 3 | / import csv
+ 4 | | import json
+ 5 | | import logging
+ 6 | | from pathlib import Path
+ 7 | | from typing import Any, Dict, List, Tuple, Optional
+ 8 | |
+ 9 | | from .scraper import RoasterScraper
+   | |___________________________________^ I001
+10 |
+11 |   logger = logging.getLogger(__name__)
+   |
+   = help: Organize imports
+
+Found 4 errors.
+[*] 4 fixable with the `--fix` option.
+
+```
+
+### Unused Issues
+```
+push_to_supabase.py:11:20: F401 [*] `typing.List` imported but unused
+   |
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                    ^^^^ F401
+12 |
+13 | from loguru import logger
+   |
+   = help: Remove unused import
+
+push_to_supabase.py:11:26: F401 [*] `typing.Dict` imported but unused
+   |
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                          ^^^^ F401
+12 |
+13 | from loguru import logger
+   |
+   = help: Remove unused import
+
+push_to_supabase.py:11:32: F401 [*] `typing.Any` imported but unused
+   |
+ 9 | import sys
+10 | from pathlib import Path
+11 | from typing import List, Dict, Any
+   |                                ^^^ F401
+12 |
+13 | from loguru import logger
+   |
+   = help: Remove unused import
+
+run_product_scraper.py:25:20: F401 [*] `typing.List` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                    ^^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+run_product_scraper.py:25:26: F401 [*] `typing.Dict` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                          ^^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+run_product_scraper.py:25:32: F401 [*] `typing.Any` imported but unused
+   |
+23 | import sys
+24 | from pathlib import Path
+25 | from typing import List, Dict, Any
+   |                                ^^^ F401
+26 |
+27 | from loguru import logger
+   |
+   = help: Remove unused import
+
+Found 6 errors.
+[*] 6 fixable with the `--fix` option.
+
+```
 
 ### Complexity - Clean!
 

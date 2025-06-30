@@ -23,7 +23,7 @@ class ValidationResult:
         field: str,
         valid: bool,
         level: ValidationLevel = ValidationLevel.WARNING,
-        message: 'Optional[str]' = None,
+        message: "Optional[str]" = None,
         corrected_value: Any = None,
     ):
         """

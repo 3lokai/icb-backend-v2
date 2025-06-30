@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Blue Tokai Coffee",
+    "website_url": "https://bluetokaicoffee.com",
+    "slug": "blue-tokai-coffee",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "bluetokaicoffee.com",
+    "platform": "shopify",
+    "instagram_handle": "bluetokaicoffee",
+    "social_links": [
+      "https://www.instagram.com/bluetokaicoffee/",
+      "https://www.facebook.com/bluetokaicoffee/",
+      "https://twitter.com/bluetokaicoffee"
+    ],
+    "contact_email": "getcoffee@bluetokaicoffee.com",
+    "logo_url": "https://bluetokaicoffee.com/cdn/shop/files/logo-footer.png?v=1688108473&width=190",
+    "tags": [
+      "specialty",
+      "organic",
+      "single-origin",
+      "local",
+      "arabica",
+      "subscription",
+      "shopify"
+    ],
+    "has_subscription": true,
+    "has_physical_store": true,
+    "description": "Blue Tokai Coffee is a specialty coffee roaster known for sourcing high-quality beans directly from Indian farmers and roasting them to highlight unique flavors. They focus on transparency, sustainability, and bringing artisanal coffee to consumers.",
+    "founded_year": 2013,
+    "address": "8, Nizamuddin West, New Delhi, Delhi 110013, India"
+  }
+]

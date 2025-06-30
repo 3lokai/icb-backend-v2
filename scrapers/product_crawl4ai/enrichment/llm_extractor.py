@@ -22,9 +22,9 @@ COFFEE_COMPLETE_SCHEMA = {
         "name": {"type": "string", "description": "Product name"},
         "price": {"type": "number", "description": "Price in local currency"},
         "description": {"type": "string", "description": "Product description"},
-        "roast_level": {"type": "string", "enum": ["light", "medium", "dark", "unknown"]},
-        "bean_type": {"type": "string", "enum": ["arabica", "robusta", "blend", "unknown"]},
-        "processing_method": {"type": "string", "enum": ["washed", "natural", "honey", "unknown"]},
+        "roast_level": {"type": "string", "enum": ["light", "medium", "dark", "medium-dark", "french", "unknown"]},
+        "bean_type": {"type": "string", "enum": ["arabica", "robusta", "blend", "arabica-robusta", "unknown"]},
+        "processing_method": {"type": "string", "enum": ["washed", "natural", "honey", "monsooned", "pulp-sun-dried", "unknown"]},
         "region_name": {"type": "string", "description": "Coffee origin region"},
         "is_single_origin": {"type": "boolean", "description": "True if single origin, false if blend"},
         "flavor_notes": {"type": "string", "description": "Comma-separated flavor notes"},
@@ -36,6 +36,7 @@ COFFEE_COMPLETE_SCHEMA = {
         "with_milk_suitable": {"type": "boolean", "description": "Suitable for milk drinks"},
         "varietals": {"type": "string", "description": "Coffee varietals (comma-separated)"},
         "altitude_meters": {"type": "string", "description": "Growing altitude (e.g. '1500m' or '1200-1800m')"},
+        "brew_methods": {"type": "string", "description": "Recommended brew methods (comma-separated)"},
     },
 }
 
@@ -50,7 +51,7 @@ def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
         elif isinstance(extracted["flavor_notes"], list):
             product["flavor_profiles"] = extracted["flavor_notes"]
 
-    # Copy simple string fields
+    # Copy simple string fields (only if not already present)
     simple_fields = [
         "roast_level",
         "bean_type",
@@ -65,7 +66,7 @@ def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
         if field in extracted and extracted[field] and not product.get(field):
             product[field] = extracted[field]
 
-    # Handle boolean fields
+    # Handle boolean fields (only if not already present)
     if (
         "is_single_origin" in extracted
         and extracted["is_single_origin"] is not None
@@ -105,11 +106,41 @@ def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
         elif isinstance(alt_val, (int, float)):
             product["altitude_meters"] = int(alt_val)
 
+    # Handle brew methods (convert string to list)
+    if "brew_methods" in extracted and extracted["brew_methods"] and not product.get("brew_methods"):
+        if isinstance(extracted["brew_methods"], str):
+            methods = [method.strip() for method in extracted["brew_methods"].split(",") if method.strip()]
+            # Normalize common brew method names
+            normalized_methods = []
+            for method in methods:
+                method_lower = method.lower()
+                if "espresso" in method_lower:
+                    normalized_methods.append("espresso")
+                elif "pour over" in method_lower or "pourover" in method_lower:
+                    normalized_methods.append("pour over")
+                elif "french press" in method_lower:
+                    normalized_methods.append("french press")
+                elif "aeropress" in method_lower:
+                    normalized_methods.append("aeropress")
+                elif "moka pot" in method_lower:
+                    normalized_methods.append("moka pot")
+                elif "drip" in method_lower:
+                    normalized_methods.append("drip")
+                elif "cold brew" in method_lower:
+                    normalized_methods.append("cold brew")
+                elif "turkish" in method_lower:
+                    normalized_methods.append("turkish")
+                else:
+                    normalized_methods.append(method)
+            product["brew_methods"] = normalized_methods
+        elif isinstance(extracted["brew_methods"], list):
+            product["brew_methods"] = extracted["brew_methods"]
+
 
 async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> Dict[str, Any]:
     """
     Enrich a coffee product with missing details using LLM extraction.
-    SIMPLIFIED VERSION - only fills essential missing fields.
+    IMPROVED VERSION - only extracts fields that are still missing after attribute extraction.
     """
     # Skip if no URL
     if not product.get("direct_buy_url"):
@@ -131,6 +162,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
         "with_milk_suitable",
         "varietals",
         "altitude_meters",
+        "brew_methods",
     ]
     missing_fields = [field for field in all_fields if not product.get(field)]
 
@@ -143,10 +175,16 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
     logger.info(f"Enriching product {product.get('name', 'Unknown')} - missing: {missing_fields}")
 
     try:
+        # Create a focused schema for only missing fields
+        focused_schema = {
+            "type": "object",
+            "properties": {field: COFFEE_COMPLETE_SCHEMA["properties"][field] for field in missing_fields}
+        }
+
         # Simple LLM extraction strategy
         llm_strategy = LLMExtractionStrategy(
             llm_config=get_llm_config(),
-            schema=COFFEE_COMPLETE_SCHEMA,
+            schema=focused_schema,
             extraction_type="schema",
             instruction=f"""
             Extract these missing coffee details: {", ".join(missing_fields)}.
@@ -157,10 +195,12 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
             - Details: aroma, varietals, growing altitude
             - Flavor notes: any taste descriptions
             - Milk compatibility: good for lattes/cappuccinos?
+            - Brew methods: recommended brewing techniques
             
             Only fill fields you're confident about. Use 'unknown' if unsure.
             For varietals, list specific varieties like 'Bourbon, Typica'.
             For altitude, include numbers like '1500' or '1200-1800'.
+            For brew methods, list common methods like 'espresso, pour over, french press'.
             """,
             input_format="markdown",
             chunk_token_threshold=5000,  # Increased for more fields
@@ -203,7 +243,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
 async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, Any]]:
     """
     Extract product data from a product page URL.
-    SIMPLIFIED VERSION - focuses on core product data only.
+    IMPROVED VERSION - focuses on core product data only.
     """
     logger.info(f"Extracting product data from URL: {url}")
 
@@ -222,10 +262,12 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
             - Characteristics: acidity, body, sweetness, aroma
             - Details: varietals, altitude, milk compatibility
             - Flavor notes: tasting notes and flavor descriptions
+            - Brew methods: recommended brewing techniques
             
             Only include information clearly stated on the page.
             For varietals, list specific varieties like 'Bourbon, Typica'.
             For altitude, include numbers like '1500m' or '1200-1800masl'.
+            For brew methods, list common methods like 'espresso, pour over, french press'.
             """,
             input_format="markdown",
             chunk_token_threshold=5000,

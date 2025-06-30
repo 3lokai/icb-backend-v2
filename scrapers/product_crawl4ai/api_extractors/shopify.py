@@ -280,7 +280,6 @@ def standardize_shopify_product(
     else:
         product["varietals"] = None
 
-
     raw_altitude = extract_attribute(
         shopify_product, "altitude_meters", ["altitude", "elevation", "altitude_meters", "growing_altitude"]
     )

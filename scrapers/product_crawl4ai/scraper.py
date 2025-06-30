@@ -16,6 +16,7 @@ from .api_extractors.shopify import extract_products_shopify
 from .api_extractors.woocommerce import extract_products_woocommerce
 from .discovery.deep_crawler import discover_products_via_crawl4ai
 from .enrichment.llm_extractor import enrich_coffee_product
+from .extractors.attributes import extract_all_attributes
 from .validators.coffee import validate_enriched_product
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ class ProductScraper:
             logger.info(f"Fallback to deep crawling for {roaster_name} (platform: {platform})")
             products = await discover_products_via_crawl4ai(url, roaster_id, roaster_name)
 
-        # 4. Perform enrichment for each product
+        # 4. Process each product through the extraction pipeline
         coffee_models = []
         for product in products:
             # Convert to dict if it's a model
@@ -112,8 +113,20 @@ class ProductScraper:
                 logger.debug(f"Skipping non-coffee product: {product_dict.get('name', 'Unknown')}")
                 continue
 
-            # Enrich product with missing data
+            # 4a. Extract attributes from existing data (description, tags, etc.)
+            logger.info(f"Extracting attributes from existing data for: {product_dict.get('name', 'Unknown')}")
+            product_dict = extract_all_attributes(
+                coffee=product_dict,
+                text=product_dict.get("description", ""),
+                tags=product_dict.get("tags", []),
+                structured_data=product_dict,
+                name=product_dict.get("name", ""),
+                confidence_tracking=True,
+            )
+
+            # 4b. Enrich product with missing data using LLM (if enabled)
             if use_enrichment:
+                logger.info(f"Enriching product with LLM: {product_dict.get('name', 'Unknown')}")
                 enriched_product_data = await enrich_coffee_product(product_dict, roaster_name)
             else:
                 logger.info(
@@ -121,7 +134,7 @@ class ProductScraper:
                 )
                 enriched_product_data = product_dict  # Use the product_dict directly if not enriching
 
-            # Validate enriched product (phase 2)
+            # 4c. Validate enriched product (phase 2)
             # The validator should be able to handle data that hasn't been through LLM enrichment
             if validate_enriched_product(enriched_product_data):
                 coffee_model = dict_to_pydantic_model(
@@ -197,9 +210,22 @@ class ProductScraper:
             logger.info(f"Not a coffee product: {product_url}")
             return None
 
+        # Extract attributes from existing data
+        product_dict = extract_all_attributes(
+            coffee=product_dict,
+            text=product_dict.get("description", ""),
+            tags=product_dict.get("tags", []),
+            structured_data=product_dict,
+            name=product_dict.get("name", ""),
+            confidence_tracking=True,
+        )
+
         # Enrich and validate
-        enriched_product = await enrich_coffee_product(product_dict, roaster_name)
-        if validate_enriched_product(enriched_product):
-            return dict_to_pydantic_model(enriched_product, Coffee, preprocessor=preprocess_coffee_data)
+        enriched_product_data = await enrich_coffee_product(product_dict, roaster_name)
+        if validate_enriched_product(enriched_product_data):
+            coffee_model = dict_to_pydantic_model(
+                enriched_product_data, Coffee, preprocessor=preprocess_coffee_data
+            )
+            return coffee_model
 
         return None

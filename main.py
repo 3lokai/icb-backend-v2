@@ -54,6 +54,7 @@ def setup_logging(log_dir_override=None):
 
     return logger
 
+
 @click.group()
 @click.version_option(version="0.1.0")
 def cli():
@@ -72,11 +73,11 @@ def cli():
 def detect(url):
     """Detect the e-commerce platform of a given URL."""
     logger.info(f"Detecting platform for {url}...")
-    
+
     async def run_detection():
         detector = PlatformDetector()
         return await detector.detect(url)
-    
+
     try:
         platform, confidence = asyncio.run(run_detection())
         logger.info(f"Detected platform: {platform} (confidence={confidence})")
@@ -84,7 +85,6 @@ def detect(url):
     except Exception as e:
         logger.error(f"Platform detection failed: {e}")
         click.echo(f"Error: {e}")
-
 
 
 @cli.command()
@@ -358,6 +358,7 @@ def enrich(roaster_id, all, csv, id_col):
     """Enrich coffee data using LLM."""
     try:
         from common.enricher import enrich_coffee_data
+
         if csv and roaster_id:
             # Process CSV of roaster IDs
             roaster_ids = []
@@ -406,7 +407,7 @@ def enrich(roaster_id, all, csv, id_col):
 
 @cli.command()
 @click.option("--csv", is_flag=True, help="Output as CSV")
-@click.option("--json", is_flag=True, help="Output as JSON") 
+@click.option("--json", is_flag=True, help="Output as JSON")
 @click.option("--output", type=click.Path(), help="Output file path for CSV")
 def list_roasters(csv, json, output):
     """List all roasters in the database."""

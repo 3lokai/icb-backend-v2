@@ -22,7 +22,10 @@ except ImportError:
     Crawl4AILLMConfig = None
     LLMExtractionStrategy = None
     BaseModel = object
-    Field = lambda *a, **k: None
+
+
+def Field(*a, **k):
+    return None
 
 
 class RoasterEnrichmentData(BaseModel):

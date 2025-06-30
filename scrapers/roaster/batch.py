@@ -4,7 +4,7 @@ import csv
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .scraper import RoasterScraper
 
