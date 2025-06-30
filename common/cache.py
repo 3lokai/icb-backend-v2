@@ -274,32 +274,41 @@ class ScraperCache:
 
         return files_removed
 
+
 # At the bottom of cache.py
 
 # Create singleton instance
 _cache = ScraperCache()
 
+
 # Export ALL the cache functions your scrapers expect
 def cache_products(roaster_id, products):
     return _cache.cache_products(roaster_id, products)
 
+
 def get_cached_products(roaster_id, max_age_days=7):
     return _cache.get_cached_products(roaster_id, max_age_days)
+
 
 def cache_html(url, content):
     return _cache.cache_html(url, content)
 
+
 def get_cached_html(url, max_age_days=7, field_stability=None):
     return _cache.get_cached_html(url, max_age_days, field_stability)
+
 
 def cache_roaster(roaster):
     return _cache.cache_roaster(roaster)
 
+
 def get_cached_roaster(name, url, max_age_days=30, field_stability=None):
     return _cache.get_cached_roaster(name, url, max_age_days, field_stability)
 
+
 def clear_cache(cache_type=None, roaster_id=None, url=None):
     return _cache.clear_cache(cache_type, roaster_id, url)
+
 
 # Bonus: Export the instance itself if someone needs more control
 cache = _cache

@@ -18,20 +18,12 @@ from loguru import logger
 from common.exporter import export_to_csv, export_to_json
 from common.platform_detector import PlatformDetector
 from common.utils import slugify
+from db.models import Coffee, Roaster
 from db.supabase import supabase
-from db.models import Roaster
 from scrapers.product_crawl4ai.scraper import ProductScraper
 
 # Import project components
 from scrapers.roasters_crawl4ai.crawler import RoasterCrawler as RoasterScraper
-
-
-def detect_platform(url):
-    """Synchronous helper to detect platform using PlatformDetector class for CLI compatibility."""
-    import asyncio
-
-    detector = PlatformDetector()
-    return asyncio.run(detector.detect(url))
 
 
 # Configure logging
@@ -62,10 +54,6 @@ def setup_logging(log_dir_override=None):
 
     return logger
 
-
-logger = setup_logging()
-
-
 @click.group()
 @click.version_option(version="0.1.0")
 def cli():
@@ -84,20 +72,19 @@ def cli():
 def detect(url):
     """Detect the e-commerce platform of a given URL."""
     logger.info(f"Detecting platform for {url}...")
+    
+    async def run_detection():
+        detector = PlatformDetector()
+        return await detector.detect(url)
+    
     try:
-        # Use the newer asyncio pattern to avoid deprecation warnings
-        async def async_detect():
-            result = detect_platform(url)
-            if hasattr(result, "__await__"):
-                return result
-            return result
-
-        platform, confidence = asyncio.run(async_detect())
+        platform, confidence = asyncio.run(run_detection())
         logger.info(f"Detected platform: {platform} (confidence={confidence})")
         click.echo(f"Website {url} is using platform: {platform} (confidence={confidence})")
     except Exception as e:
         logger.error(f"Platform detection failed: {e}")
         click.echo(f"Error: {e}")
+
 
 
 @cli.command()
@@ -305,10 +292,10 @@ def scrape_products(
             # This logic for running asyncio seems fine, no changes needed here for now.
             if asyncio.get_event_loop().is_running():
 
-                async def run_in_current_loop():
+                async def run_products_in_current_loop():
                     return await scrape_all()
 
-                results = asyncio.create_task(run_in_current_loop())
+                results = asyncio.create_task(run_products_in_current_loop())
                 while not results.done():
                     pass  # Minimal busy wait, consider asyncio.wait for better control
                 results = results.result()
@@ -347,10 +334,10 @@ def scrape_products(
             # This logic for running asyncio seems fine.
             if asyncio.get_event_loop().is_running():
 
-                async def run_in_current_loop():
+                async def run_single_product_in_current_loop():
                     return await process_single_url()
 
-                results = asyncio.create_task(run_in_current_loop())
+                results = asyncio.create_task(run_single_product_in_current_loop())
                 while not results.done():
                     pass  # Minimal busy wait
                 results = results.result()
@@ -371,7 +358,6 @@ def enrich(roaster_id, all, csv, id_col):
     """Enrich coffee data using LLM."""
     try:
         from common.enricher import enrich_coffee_data
-
         if csv and roaster_id:
             # Process CSV of roaster IDs
             roaster_ids = []
@@ -396,7 +382,7 @@ def enrich(roaster_id, all, csv, id_col):
 
         elif all:
             logger.info("Enriching all coffee data...")
-            coffees = supabase.list_all()
+            coffees = supabase.list_all(Coffee)
             enriched_count = enrich_coffee_data(coffees)
             click.echo(f"Successfully enriched {enriched_count} coffee products")
 
@@ -420,8 +406,9 @@ def enrich(roaster_id, all, csv, id_col):
 
 @cli.command()
 @click.option("--csv", is_flag=True, help="Output as CSV")
+@click.option("--json", is_flag=True, help="Output as JSON") 
 @click.option("--output", type=click.Path(), help="Output file path for CSV")
-def list_roasters(is_csv, output):
+def list_roasters(csv, json, output):
     """List all roasters in the database."""
     try:
         roasters = supabase.list_all(Roaster)
@@ -430,7 +417,7 @@ def list_roasters(is_csv, output):
             click.echo("No roasters found in database.")
             return
 
-        if is_csv:
+        if csv:
             # Output as CSV using standardized exporter
             output = output or "roasters.csv"
             fieldnames = ["id", "name", "website_url", "city", "state", "country", "platform"]
@@ -454,7 +441,7 @@ def list_roasters(is_csv, output):
 
         elif json:
             # Output as JSON using standardized exporter
-            json_output = json_output or "roasters.json"
+            json_output = output or "roasters.json"
             export_to_json(
                 [
                     {
@@ -500,8 +487,9 @@ def main():
 @click.option("--active-only", is_flag=True, help="Only scrape active roasters")
 def scrape_db_roasters(roaster_id, limit, force, enrich, concurrent, active_only):
     """Scrape products for roasters already in the database."""
+    scraper = ProductScraper()
     try:
-         # Fetch roasters from database
+        # Fetch roasters from database
         if roaster_id:
             # Get specific roaster
             roaster = supabase.get_by_id(Roaster, roaster_id)
@@ -603,10 +591,10 @@ def scrape_db_roasters(roaster_id, limit, force, enrich, concurrent, active_only
         # Run async scraping in a safe way
         if asyncio.get_event_loop().is_running():
             # We're already in an event loop
-            async def run_in_current_loop():
+            async def run_db_scraping_in_current_loop():
                 return await scrape_all()
 
-            results = asyncio.create_task(run_in_current_loop())
+            results = asyncio.create_task(run_db_scraping_in_current_loop())
             # Wait for the task to complete
             while not results.done():
                 pass

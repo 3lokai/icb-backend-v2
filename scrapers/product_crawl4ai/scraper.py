@@ -65,9 +65,13 @@ class ProductScraper:
             if cached_products:
                 logger.info(f"Using {len(cached_products)} cached products for {roaster_name}")
                 return [
-                    model for model in (
-                        dict_to_pydantic_model(p, Coffee, preprocessor=preprocess_coffee_data) for p in cached_products if p
-                    ) if model is not None
+                    model
+                    for model in (
+                        dict_to_pydantic_model(p, Coffee, preprocessor=preprocess_coffee_data)
+                        for p in cached_products
+                        if p
+                    )
+                    if model is not None
                 ]
         else:
             logger.info(f"Force refresh enabled for {roaster_name}. Bypassing cache read.")

@@ -35,44 +35,62 @@ COFFEE_COMPLETE_SCHEMA = {
         "aroma": {"type": "string", "description": "Aroma description"},
         "with_milk_suitable": {"type": "boolean", "description": "Suitable for milk drinks"},
         "varietals": {"type": "string", "description": "Coffee varietals (comma-separated)"},
-        "altitude_meters": {"type": "string", "description": "Growing altitude (e.g. '1500m' or '1200-1800m')"}
-    }
+        "altitude_meters": {"type": "string", "description": "Growing altitude (e.g. '1500m' or '1200-1800m')"},
+    },
 }
+
 
 def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
     """Process and normalize extracted fields from LLM (shared logic)"""
-    
+
     # Handle flavor profiles (convert string to list)
     if "flavor_notes" in extracted and extracted["flavor_notes"]:
         if isinstance(extracted["flavor_notes"], str):
             product["flavor_profiles"] = [note.strip() for note in extracted["flavor_notes"].split(",") if note.strip()]
         elif isinstance(extracted["flavor_notes"], list):
             product["flavor_profiles"] = extracted["flavor_notes"]
-    
+
     # Copy simple string fields
-    simple_fields = ["roast_level", "bean_type", "processing_method", "region_name", "acidity", "body", "sweetness", "aroma"]
+    simple_fields = [
+        "roast_level",
+        "bean_type",
+        "processing_method",
+        "region_name",
+        "acidity",
+        "body",
+        "sweetness",
+        "aroma",
+    ]
     for field in simple_fields:
         if field in extracted and extracted[field] and not product.get(field):
             product[field] = extracted[field]
-    
+
     # Handle boolean fields
-    if "is_single_origin" in extracted and extracted["is_single_origin"] is not None and product.get("is_single_origin") is None:
+    if (
+        "is_single_origin" in extracted
+        and extracted["is_single_origin"] is not None
+        and product.get("is_single_origin") is None
+    ):
         product["is_single_origin"] = extracted["is_single_origin"]
-    
-    if "with_milk_suitable" in extracted and extracted["with_milk_suitable"] is not None and product.get("with_milk_suitable") is None:
+
+    if (
+        "with_milk_suitable" in extracted
+        and extracted["with_milk_suitable"] is not None
+        and product.get("with_milk_suitable") is None
+    ):
         if isinstance(extracted["with_milk_suitable"], str):
             val_lower = extracted["with_milk_suitable"].lower()
             product["with_milk_suitable"] = val_lower in ["true", "yes", "1", "suitable"]
         else:
             product["with_milk_suitable"] = bool(extracted["with_milk_suitable"])
-    
+
     # Handle varietals (convert string to list)
     if "varietals" in extracted and extracted["varietals"] and not product.get("varietals"):
         if isinstance(extracted["varietals"], str):
             product["varietals"] = [v.strip() for v in extracted["varietals"].split(",") if v.strip()]
         elif isinstance(extracted["varietals"], list):
             product["varietals"] = extracted["varietals"]
-    
+
     # Handle altitude (convert to integer)
     if "altitude_meters" in extracted and extracted["altitude_meters"] and product.get("altitude_meters") is None:
         alt_val = extracted["altitude_meters"]
@@ -100,8 +118,20 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
         return product
 
     # Check which fields are missing (including advanced fields)
-    all_fields = ["roast_level", "bean_type", "processing_method", "region_name", "flavor_profiles", 
-                  "acidity", "body", "sweetness", "aroma", "with_milk_suitable", "varietals", "altitude_meters"]
+    all_fields = [
+        "roast_level",
+        "bean_type",
+        "processing_method",
+        "region_name",
+        "flavor_profiles",
+        "acidity",
+        "body",
+        "sweetness",
+        "aroma",
+        "with_milk_suitable",
+        "varietals",
+        "altitude_meters",
+    ]
     missing_fields = [field for field in all_fields if not product.get(field)]
 
     # Skip if no fields need enrichment
@@ -119,7 +149,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
             schema=COFFEE_COMPLETE_SCHEMA,
             extraction_type="schema",
             instruction=f"""
-            Extract these missing coffee details: {', '.join(missing_fields)}.
+            Extract these missing coffee details: {", ".join(missing_fields)}.
             
             Look for:
             - Basic: roast level, bean type, processing method, origin region
@@ -135,14 +165,14 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
             input_format="markdown",
             chunk_token_threshold=5000,  # Increased for more fields
             apply_chunking=True,
-            extra_args={"temperature": 0.1}
+            extra_args={"temperature": 0.1},
         )
 
         # Simple crawler config - no JS, no complex processing
         config_simple = CrawlerRunConfig(
             extraction_strategy=llm_strategy,
             page_timeout=30000,  # 30 seconds max
-            cache_mode=CacheMode.ENABLED  # Use cache to save costs
+            cache_mode=CacheMode.ENABLED,  # Use cache to save costs
         )
 
         # Run the crawler
@@ -153,7 +183,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
                 try:
                     extracted = json.loads(result.extracted_content)
                     _process_extracted_fields(product, extracted)
-                    
+
                     logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
                     product["deepseek_enriched"] = True
                 except json.JSONDecodeError as e:
@@ -200,14 +230,12 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
             input_format="markdown",
             chunk_token_threshold=5000,
             apply_chunking=True,
-            extra_args={"temperature": 0.1}
+            extra_args={"temperature": 0.1},
         )
 
         # Simple crawler config
         config_simple = CrawlerRunConfig(
-            extraction_strategy=llm_strategy,
-            page_timeout=30000,
-            cache_mode=CacheMode.ENABLED
+            extraction_strategy=llm_strategy, page_timeout=30000, cache_mode=CacheMode.ENABLED
         )
 
         # Run the crawler
@@ -217,7 +245,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
             if result.success and result.extracted_content:
                 try:
                     extracted = json.loads(result.extracted_content)
-                    
+
                     # Get product name (required)
                     product_name = extracted.get("name")
                     if not product_name:
@@ -233,7 +261,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                         "direct_buy_url": url,
                         "is_available": True,
                         "prices": [],
-                        "source": "crawl4ai_extraction"
+                        "source": "crawl4ai_extraction",
                     }
 
                     # Process price if available
@@ -269,6 +297,6 @@ def get_llm_config() -> LLMConfig:
     openai_key = config.llm.openai_api_key
     if openai_key:
         return LLMConfig(provider="openai/gpt-4o-mini", api_token=openai_key)
-    
+
     logger.warning("No LLM API keys found. Extraction will fail.")
     return LLMConfig(provider="openai/gpt-4o-mini", api_token="")

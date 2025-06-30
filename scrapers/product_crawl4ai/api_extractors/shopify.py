@@ -11,6 +11,7 @@ from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
 from common.utils import (
     clean_description,
     ensure_absolute_url,
+    extract_brew_methods_from_grind_size,
     is_coffee_product,
     standardize_bean_type,
     standardize_processing_method,
@@ -134,67 +135,7 @@ async def extract_products_shopify(
 
             # Fetch metafields
             for product_raw in shopify_products_raw:
-                product_id = product_raw.get("id")
-                if not product_id:
-                    logger.warning(
-                        f"Product missing ID, cannot fetch metafields: {product_raw.get('title', 'Unknown title')}"
-                    )
-                    products_to_standardize.append(product_raw)
-                    continue
-
-                # Default to empty list if no metafields found or error
-                product_raw["metafields"] = []
-
-                # Attempt to fetch metafields from /admin/api/ - this requires auth and correct base_url for admin
-                # This is a best-effort attempt as per instructions.
-                # In a real public scraper, this specific path is unlikely to work without authentication.
-                # A more realistic Shopify scraper would use a private app with API access, or rely on theme-exposed data.
-                # For this exercise, we form the URL as requested.
-                # It's important that `base_url` is the shop's main URL, not an admin-specific one.
-                # The construction of admin_api_base_url might be more complex in reality.
-                # Assuming `base_url` is like "https://shop.com"
-                # Then metafields_url is "https://shop.com/admin/api/2023-10/products/{product_id}/metafields.json"
-                # Note: API version (e.g., 2023-10) is often part of the admin path. Using a recent one.
-                admin_api_version = "2024-04"  # Or a relevant API version
-                metafields_url = f"{base_url}/admin/api/{admin_api_version}/products/{product_id}/metafields.json"
-
-                # Check if metafields are already embedded (e.g., by some apps or newer API versions of /products.json)
-                if (
-                    "metafields" in product_raw
-                    and isinstance(product_raw["metafields"], list)
-                    and product_raw["metafields"]
-                ):
-                    logger.debug(f"Using embedded metafields for product {product_id}")
-                else:
-                    logger.info(f"Attempting to fetch metafields for product {product_id} from {metafields_url}")
-                    try:
-                        # This client.get reuses the existing AsyncClient
-                        metafields_response = await client.get(metafields_url)
-                        # Do not raise_for_status here, handle errors gracefully
-                        if metafields_response.status_code == 200:
-                            metafields_data = metafields_response.json()
-                            if "metafields" in metafields_data:
-                                product_raw["metafields"] = metafields_data["metafields"]
-                                logger.debug(f"Successfully fetched metafields for product {product_id}")
-                        elif metafields_response.status_code == 401 or metafields_response.status_code == 403:
-                            logger.warning(
-                                f"Unauthorized (401/403) to fetch metafields for product {product_id} from {metafields_url}. This usually requires an Admin API token."
-                            )
-                        elif metafields_response.status_code == 404:
-                            logger.warning(
-                                f"Metafields endpoint not found (404) for product {product_id} at {metafields_url}. This path might be incorrect or metafields not set up for admin access."
-                            )
-                        else:
-                            logger.warning(
-                                f"Failed to fetch metafields for product {product_id} from {metafields_url}: {metafields_response.status_code}"
-                            )
-                    except httpx.RequestError as e:
-                        logger.error(f"HTTP Request Error fetching metafields for product {product_id}: {e}")
-                    except json.JSONDecodeError as e:
-                        logger.error(f"JSON Decode Error fetching metafields for product {product_id}: {e}")
-                    except Exception as e:  # Catch any other error during metafield fetch
-                        logger.error(f"Generic error fetching metafields for product {product_id}: {e}", exc_info=True)
-
+                product_raw["metafields"] = []  # Empty list since we can't access admin API
                 products_to_standardize.append(product_raw)
 
         # Standardize products
@@ -334,8 +275,11 @@ def standardize_shopify_product(
         product["varietals"] = [v.strip() for v in raw_varietals.split(",") if v.strip()]
     elif isinstance(raw_varietals, list):
         product["varietals"] = [str(v).strip() for v in raw_varietals if str(v).strip()]
+    elif raw_varietals is not None:  # Handle any other non-None type
+        product["varietals"] = [str(raw_varietals).strip()] if str(raw_varietals).strip() else None
     else:
         product["varietals"] = None
+
 
     raw_altitude = extract_attribute(
         shopify_product, "altitude_meters", ["altitude", "elevation", "altitude_meters", "growing_altitude"]

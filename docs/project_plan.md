@@ -60,39 +60,39 @@
 - [ ] Export roaster data to CSV/JSON
 
 ### Stage 2: Shopify Product Scraping
-- [ ] Enhance Shopify scraper for product data
-- [ ] Improve variant and price extraction for different weights
-- [ ] Extract flavor profiles, brewing methods, and other attributes
-- [ ] Map data to Supabase schema format
-- [ ] Export product data to CSV/JSON
+- [x] Enhance Shopify scraper for product data
+- [x] Improve variant and price extraction for different weights
+- [x] Extract flavor profiles, brewing methods, and other attributes
+- [x] Map data to Supabase schema format
+- [x] Export product data to CSV/JSON
 
 ### Stage 3: WooCommerce Product Scraping
-- [ ] Enhance WooCommerce scraper for product data
-- [ ] Improve variation and price extraction
-- [ ] Extract product attributes and metadata
-- [ ] Map data to Supabase schema format
-- [ ] Export product data to CSV/JSON
+- [x] Enhance WooCommerce scraper for product data
+- [x] Improve variation and price extraction
+- [x] Extract product attributes and metadata
+- [x] Map data to Supabase schema format
+- [x] Export product data to CSV/JSON
 
 ### Stage 4: Static/Other Platform Scraping
-- [ ] Improve generic scraper for unknown platforms
-- [ ] Implement fallback extraction mechanisms
-- [ ] Enhance data validation for varied structures
-- [ ] Map data to Supabase schema format
-- [ ] Export product data to CSV/JSON
+- [x] Improve generic scraper for unknown platforms
+- [x] Implement fallback extraction mechanisms
+- [x] Enhance data validation for varied structures
+- [x] Map data to Supabase schema format
+- [x] Export product data to CSV/JSON
 
 ### Stage 5: Supabase Integration
-- [ ] Implement Supabase client in `db/supabase.py`
-- [ ] Develop CRUD operations for all relevant tables
-- [ ] Create data transformation functions to map scraped data to Supabase schema
-- [ ] Implement relational data handling (coffee-flavor relationships, etc.)
-- [ ] Add error handling and retry mechanisms
+- [x] Implement Supabase client in `db/supabase.py`
+- [x] Develop CRUD operations for all relevant tables
+- [x] Create data transformation functions to map scraped data to Supabase schema
+- [x] Implement relational data handling (coffee-flavor relationships, etc.)
+- [x] Add error handling and retry mechanisms
 
 ### Stage 6: Additional Enhancements
-- [ ] Add missing fields if needed
-- [ ] Improve data quality through additional validation
-- [ ] Add comprehensive logging and error reporting
-- [ ] Create data exploration and validation tools
-- [ ] Optimize performance for large-scale scraping
+- [x] Add missing fields if needed
+- [x] Improve data quality through additional validation
+- [x] Add comprehensive logging and error reporting
+- [x] Create data exploration and validation tools
+- [x] Optimize performance for large-scale scraping
 
 ### Stage 7: Automation
 - [ ] Implement scheduling mechanisms

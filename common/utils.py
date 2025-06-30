@@ -741,3 +741,34 @@ def ensure_absolute_url(url: str, base_url: str) -> str:
         return f"{parsed_base.scheme}://{parsed_base.netloc}{url}"
     else:
         return urljoin(base_url.rstrip("/") + "/", url)
+
+def extract_brew_methods_from_grind_size(grind_size_value):
+    """Extract brew methods from grind size options."""
+    if not grind_size_value:
+        return []
+    
+    grind_value = str(grind_size_value).lower()
+    brew_methods = []
+    
+    # Map grind sizes to common brew methods
+    grind_mapping = {
+        'espresso': ['espresso'],
+        'fine': ['espresso', 'moka pot', 'aeropress'],
+        'medium-fine': ['aeropress', 'v60', 'pour over'],
+        'medium': ['drip', 'pour over', 'chemex'],
+        'medium-coarse': ['chemex', 'french press'],
+        'coarse': ['french press', 'cold brew'],
+        'extra coarse': ['cold brew'],
+        'turkish': ['turkish'],
+        'filter': ['drip', 'pour over'],
+        'drip': ['drip'],
+        'french': ['french press'],
+        'whole bean': ['espresso', 'drip', 'pour over'],  # Most versatile
+    }
+    
+    for grind_type, methods in grind_mapping.items():
+        if grind_type in grind_value:
+            brew_methods.extend(methods)
+            break
+    
+    return list(set(brew_methods))

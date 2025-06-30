@@ -4,7 +4,7 @@ import csv
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from .scraper import RoasterScraper
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def scrape_roasters_from_csv(
-    csv_path: str, output_path: str = None, limit: int = None
+    csv_path: str, output_path: Optional[str] = None, limit: Optional[int] = None
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Scrape roasters from a CSV file."""
     results = []
@@ -36,6 +36,8 @@ async def scrape_roasters_from_csv(
 
         # Process each roaster
         for row in rows:
+            name = ""
+            url = ""
             try:
                 name = row.get("name", row.get("roaster", "")).strip()
                 url = row.get("url", row.get("website", row.get("website_url", ""))).strip()
@@ -79,6 +81,8 @@ async def process_roaster_batch(
     errors = []
 
     for roaster in roaster_list:
+        name = ""
+        url = ""
         try:
             name = roaster.get("name", "").strip()
             url = roaster.get("url", "").strip()

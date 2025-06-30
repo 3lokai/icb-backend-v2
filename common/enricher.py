@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI
 
@@ -249,3 +249,47 @@ class EnrichmentService:
         except Exception as e:
             logger.error(f"Failed to save enrichment logs: {e}")
 
+def enrich_coffee_data(coffees: List[Union[Dict[str, Any], Any]]) -> int:
+    """
+    Synchronous function to enrich coffee data for CLI usage.
+    Accepts both Coffee model objects and dictionaries.
+    Expected by main.py enrich command.
+    """
+    if not coffees:
+        return 0
+    
+    # Convert to async and run
+    return asyncio.run(_enrich_coffee_data_async(coffees))
+
+async def _enrich_coffee_data_async(coffees: List[Union[Dict[str, Any], Any]]) -> int:
+    """Async implementation of coffee enrichment."""
+    service = EnrichmentService()
+    if not service.enabled:
+        logger.warning("Enrichment service not enabled - check API keys in config")
+        return 0
+    
+    try:
+        enriched_count = 0
+        for coffee in coffees:
+            # Use as-is if already a dict, otherwise convert from Pydantic model
+            if isinstance(coffee, dict):
+                coffee_dict = coffee
+            elif hasattr(coffee, 'model_dump'):
+                coffee_dict = coffee.model_dump()
+            elif hasattr(coffee, 'dict'):
+                coffee_dict = coffee.dict()
+            else:
+                coffee_dict = coffee
+            
+            # Enrich the coffee
+            enriched = await service.enhance_product(coffee_dict)
+            
+            # Count if anything was enriched
+            if any(key.endswith("_source") and value == "llm" for key, value in enriched.items()):
+                enriched_count += 1
+                
+        return enriched_count
+        
+    except Exception as e:
+        logger.error(f"Error in coffee enrichment: {e}")
+        return 0

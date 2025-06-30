@@ -4,10 +4,12 @@ Coffee Product Scraper Runner
 Script to run the coffee product scraper for one or more roasters.
 """
 
-import sys
 import argparse
 import json
+import sys
 from pathlib import Path
+
+from loguru import logger
 
 from scrapers.product_crawl4ai.scraper import ProductScraper
 

@@ -15,12 +15,12 @@ from common.platform_detector import PlatformDetector
 from common.utils import (
     clean_description,
     clean_html,
-    slugify,
     ensure_absolute_url,
     extract_instagram_handle,
     fetch_with_retry,
     get_domain_from_url,
     normalize_phone_number,
+    slugify,
 )
 from config import config as app_config
 

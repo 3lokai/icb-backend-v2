@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, HttpUrl
 
+
 class RoastLevel(str):
     """Roast level enum values."""
 
@@ -45,6 +46,7 @@ class RoastLevel(str):
         UNKNOWN,
     }
 
+
 class BeanType(str):
     """Bean type enum values."""
 
@@ -57,6 +59,7 @@ class BeanType(str):
     UNKNOWN = "unknown"
 
     ALL = {ARABICA, ROBUSTA, LIBERICA, BLEND, MIXED_ARABICA, ARABICA_ROBUSTA, UNKNOWN}
+
 
 class ProcessingMethod(str):
     """Processing method enum values."""
@@ -85,12 +88,14 @@ class ProcessingMethod(str):
         UNKNOWN,
     }
 
+
 class BaseDBModel(BaseModel):
     """Base model with common fields."""
 
     id: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
 
 class Roaster(BaseDBModel):
     """Model for coffee roasters."""
@@ -117,12 +122,14 @@ class Roaster(BaseDBModel):
     is_active: bool = True
     is_verified: bool = False
 
+
 class CoffeePrice(BaseModel):
     """Model for coffee prices at different sizes."""
 
     coffee_id: Optional[str] = None
     size_grams: int
     price: float
+
 
 class ExternalLink(BaseModel):
     """Model for external marketplace links."""
@@ -131,6 +138,7 @@ class ExternalLink(BaseModel):
     coffee_id: Optional[str] = None
     provider: str
     url: HttpUrl
+
 
 class Coffee(BaseDBModel):
     """Model for coffee products."""
@@ -167,11 +175,13 @@ class Coffee(BaseDBModel):
     flavor_profiles: Optional[List[str]] = None
     external_links: Optional[List[ExternalLink]] = None
 
+
 class CoffeeBrewMethod(BaseModel):
     """Model for the relationship between coffee and brew methods."""
 
     coffee_id: Optional[str] = None
     brew_method_id: Optional[str] = None
+
 
 class CoffeeFlavorProfile(BaseModel):
     """Model for the relationship between coffee and flavor profiles."""
@@ -179,15 +189,18 @@ class CoffeeFlavorProfile(BaseModel):
     coffee_id: Optional[str] = None
     flavor_profile_id: str
 
+
 class BrewMethod(BaseDBModel):
     """Model for brew method lookup table."""
 
     name: str
 
+
 class FlavorProfile(BaseDBModel):
     """Model for flavor profile lookup table."""
 
     name: str
+
 
 class ScrapingState(BaseModel):
     """Model for tracking scraping state."""

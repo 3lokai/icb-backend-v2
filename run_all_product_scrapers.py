@@ -3,16 +3,13 @@
 Batch runner to scrape products for each roaster in the input CSV.
 """
 
-import csv
-import re
-import sys
-from pathlib import Path
-from common.utils import slugify
 import asyncio
+import csv
 import logging
 import sys
 from pathlib import Path
 
+from common.utils import slugify
 from db.supabase import supabase
 from scrapers.product_crawl4ai.scraper import ProductScraper
 from scrapers.roasters_crawl4ai.run import process_single as extract_roaster
@@ -27,6 +24,7 @@ PYTHON_EXEC = sys.executable or "python"
 # Output directory for per-roaster product data (optional)
 OUTPUT_DIR = Path("data/output/products_by_roaster")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 async def process_roaster(row):
     name = row.get("name")

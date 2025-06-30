@@ -55,7 +55,7 @@ class ErrorTriageManager:
 
         for error_type, pattern in error_patterns.items():
             matches = re.findall(pattern, mypy_content, re.IGNORECASE)
-            self.errors_by_type[f"mypy_{error_type}"] = len(matches)
+            self.errors_by_type[f"mypy_{error_type}"] = matches
 
     def extract_ruff_errors(self, content: str):
         """Extract and categorize Ruff errors."""
@@ -77,7 +77,7 @@ class ErrorTriageManager:
 
         for error_type, pattern in ruff_patterns.items():
             matches = re.findall(pattern, ruff_content, re.IGNORECASE)
-            self.errors_by_type[f"ruff_{error_type}"] = len(matches)
+            self.errors_by_type[f"ruff_{error_type}"] = matches
 
     def extract_critical_issues(self, content: str):
         """Find the CRITICAL issues that need immediate attention."""
@@ -92,20 +92,20 @@ class ErrorTriageManager:
             matches = re.findall(pattern, content, re.IGNORECASE)
             if matches:
                 self.critical_count += len(matches)
-                self.errors_by_type[f"critical_{issue_type}"] = len(matches)
+                self.errors_by_type[f"critical_{issue_type}"] = matches
 
     def count_auto_fixable(self):
         """Count how many errors can be auto-fixed."""
         auto_fixable = ["ruff_unused_imports", "ruff_import_order", "ruff_unused_vars"]
 
-        self.fixable_count = sum(self.errors_by_type.get(error_type, 0) for error_type in auto_fixable)
+        self.fixable_count = sum(len(self.errors_by_type.get(error_type, [])) for error_type in auto_fixable)
 
-    def generate_triage_report(self) -> str:
-        """Generate a sane, actionable triage report."""
+    def generate_triage_report(self):
+        """Generate a triage report summarizing all errors."""
         report = []
-        report.append("# Error Triage Report - Making 8000 Lines Manageable\n")
 
-        total_errors = sum(self.errors_by_type.values())
+        # Count totals
+        total_errors = sum(len(v) if isinstance(v, list) else int(v) for v in self.errors_by_type.values())
         report.append(f"**Total Issues Found**: {total_errors}")
         report.append(f"**Auto-Fixable**: {self.fixable_count}")
         report.append(f"**Critical Issues**: {self.critical_count}")
@@ -116,8 +116,9 @@ class ErrorTriageManager:
         critical_issues = {k: v for k, v in self.errors_by_type.items() if k.startswith("critical_")}
 
         if critical_issues:
-            for issue, count in critical_issues.items():
+            for issue, matches in critical_issues.items():
                 issue_name = issue.replace("critical_", "").replace("_", " ").title()
+                count = len(matches) if isinstance(matches, list) else matches
                 report.append(f"- **{issue_name}**: {count} issues")
         else:
             report.append("✅ No critical structural issues found!")
@@ -129,13 +130,13 @@ class ErrorTriageManager:
         report.append("")
 
         auto_fixable_issues = {
-            "ruff_unused_imports": "Unused imports",
-            "ruff_import_order": "Import organization",
-            "ruff_unused_vars": "Unused variables",
+            "ruff_unused_imports": "Unused Imports",
+            "ruff_import_order": "Import Order",
+            "ruff_unused_vars": "Unused Variables",
         }
-
         for error_type, description in auto_fixable_issues.items():
-            count = self.errors_by_type.get(error_type, 0)
+            value = self.errors_by_type.get(error_type, [])
+            count = len(value) if isinstance(value, list) else value
             if count > 0:
                 report.append(f"- **{description}**: {count} issues")
 
@@ -149,12 +150,14 @@ class ErrorTriageManager:
         report.append("```")
         report.append("")
 
-        # Priority 3: MYPY ISSUES
-        report.append("## PRIORITY 3: TYPE ISSUES (Tackle Gradually)\n")
+        # Priority 3: MyPy Issues
+        report.append("## PRIORITY 3: MYPY TYPE ERRORS\n")
         mypy_issues = {k: v for k, v in self.errors_by_type.items() if k.startswith("mypy_")}
-
-        for issue, count in sorted(mypy_issues.items(), key=lambda x: x[1], reverse=True):
+        for issue, matches in sorted(
+            mypy_issues.items(), key=lambda x: len(x[1]) if isinstance(x[1], list) else x[1], reverse=True
+        ):
             issue_name = issue.replace("mypy_", "").replace("_", " ").title()
+            count = len(matches) if isinstance(matches, list) else matches
             report.append(f"- **{issue_name}**: {count} issues")
         report.append("")
 
@@ -163,9 +166,11 @@ class ErrorTriageManager:
         other_ruff = {
             k: v for k, v in self.errors_by_type.items() if k.startswith("ruff_") and k not in auto_fixable_issues
         }
-
-        for issue, count in sorted(other_ruff.items(), key=lambda x: x[1], reverse=True):
+        for issue, matches in sorted(
+            other_ruff.items(), key=lambda x: len(x[1]) if isinstance(x[1], list) else x[1], reverse=True
+        ):
             issue_name = issue.replace("ruff_", "").replace("_", " ").title()
+            count = len(matches) if isinstance(matches, list) else matches
             report.append(f"- **{issue_name}**: {count} issues")
         report.append("")
 

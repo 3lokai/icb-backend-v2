@@ -3,25 +3,35 @@ Utility for safely converting dicts to Pydantic models (e.g., Roaster, Coffee) w
 Usage:
     from db.models import Roaster, Coffee
     from common.pydantic_utils import dict_to_pydantic_model
-    
+
     roaster = dict_to_pydantic_model(data_dict, Roaster)
     coffee = dict_to_pydantic_model(data_dict, Coffee)
 """
-from typing import Type, TypeVar, Optional, Any, Dict, Set, Callable
-from pydantic import BaseModel, ValidationError, HttpUrl
+
 import logging
-from datetime import datetime
-from common.utils import normalize_phone_number, clean_description, slugify
-from common.utils import standardize_roast_level, standardize_processing_method, standardize_bean_type
-from inspect import signature, isclass
 from collections.abc import Mapping
+from datetime import datetime
+from inspect import isclass
+from typing import Any, Callable, Dict, Optional, Set, Type, TypeVar
+
+from pydantic import BaseModel, HttpUrl, ValidationError
+
+from common.utils import (
+    clean_description,
+    normalize_phone_number,
+    slugify,
+    standardize_bean_type,
+    standardize_processing_method,
+    standardize_roast_level,
+)
+
 
 def model_to_dict(
-    model: BaseModel, 
-    exclude_none: bool = True, 
-    exclude_defaults: bool = False, 
-    exclude_unset: bool = False, 
-    exclude: Optional[Set[str]] = None
+    model: BaseModel,
+    exclude_none: bool = True,
+    exclude_defaults: bool = False,
+    exclude_unset: bool = False,
+    exclude: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
     """
     Convert a Pydantic model to a database-friendly dictionary.
@@ -38,7 +48,7 @@ def model_to_dict(
         exclude_none=exclude_none,
         exclude_defaults=exclude_defaults,
         exclude_unset=exclude_unset,
-        exclude=exclude or set()
+        exclude=exclude or set(),
     )
     return _process_dict_for_db(model_dict)
 
@@ -55,19 +65,27 @@ def _process_dict_for_db(data: Dict[str, Any]) -> Dict[str, Any]:
             result[key] = _process_dict_for_db(value)
         elif isinstance(value, list):
             result[key] = [
-                _process_dict_for_db(item) if isinstance(item, dict)
-                else str(item) if isinstance(item, HttpUrl)
-                else item.isoformat() if isinstance(item, datetime)
+                _process_dict_for_db(item)
+                if isinstance(item, dict)
+                else str(item)
+                if isinstance(item, HttpUrl)
+                else item.isoformat()
+                if isinstance(item, datetime)
                 else item
                 for item in value
             ]
         else:
             result[key] = value
     return result
-T = TypeVar('T', bound=BaseModel)
+
+
+T = TypeVar("T", bound=BaseModel)
 logger = logging.getLogger(__name__)
 
-def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel], field_map: Optional[dict] = None) -> dict:
+
+def _filter_and_coerce_fields(
+    data: Dict[str, Any], model_class: Type[BaseModel], field_map: Optional[dict] = None
+) -> dict:
     """
     Filter and coerce fields in data to match model_class, with optional field name mapping.
     """
@@ -87,8 +105,8 @@ def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel]
         if isinstance(v, str) and v.lower() in ("true", "false"):
             v = v.lower() == "true"
         # Convert numbers in string form
-        if isinstance(v, str) and v.replace('.', '', 1).isdigit():
-            if '.' in v:
+        if isinstance(v, str) and v.replace(".", "", 1).isdigit():
+            if "." in v:
                 try:
                     v = float(v)
                 except Exception:
@@ -105,7 +123,10 @@ def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel]
             if annotation is not None and hasattr(annotation, "__origin__") and annotation.__origin__ is list:
                 submodel = annotation.__args__[0]
                 if isclass(submodel) and issubclass(submodel, BaseModel):
-                    v = [_filter_and_coerce_fields(dict(item), submodel) if isinstance(item, Mapping) else item for item in v]
+                    v = [
+                        _filter_and_coerce_fields(dict(item), submodel) if isinstance(item, Mapping) else item
+                        for item in v
+                    ]
         elif isinstance(v, dict):
             subfield = model_class.model_fields[field_name]
             submodel = getattr(subfield.annotation, "__args__", [None])[0] or subfield.annotation
@@ -114,7 +135,13 @@ def _filter_and_coerce_fields(data: Dict[str, Any], model_class: Type[BaseModel]
         result[field_name] = v
     return result
 
-def dict_to_pydantic_model(data: Dict[str, Any], model_class: Type[T], field_map: Optional[dict] = None, preprocessor: Optional[Callable[[dict], dict]] = None) -> Optional[T]:
+
+def dict_to_pydantic_model(
+    data: Dict[str, Any],
+    model_class: Type[T],
+    field_map: Optional[dict] = None,
+    preprocessor: Optional[Callable[[dict], dict]] = None,
+) -> Optional[T]:
     """
     Convert a dict to a Pydantic model instance, with preprocessing and type coercion.
     - field_map: dict for renaming fields (e.g., {'about_url': 'aboutUrl'})
@@ -128,6 +155,7 @@ def dict_to_pydantic_model(data: Dict[str, Any], model_class: Type[T], field_map
     except ValidationError as e:
         logger.error(f"Validation error for {model_class.__name__}: {e}")
         return None
+
 
 def preprocess_roaster_data(data: dict) -> dict:
     # Normalize phone fields
@@ -144,6 +172,7 @@ def preprocess_roaster_data(data: dict) -> dict:
     if "domain" in data and data["domain"]:
         data["domain"] = data["domain"].lower()
     return data
+
 
 def preprocess_coffee_data(data: dict) -> dict:
     # Standardize roast level

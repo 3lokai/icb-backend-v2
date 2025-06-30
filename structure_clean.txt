@@ -1,118 +1,83 @@
-Folder PATH listing for volume OSDisk
-Volume serial number is 16CA-E79E
-C:.
-|   .env
-|   .gitignore
-|   check.py
-|   config.py
-|   main.py
-|   project_structure.txt
-|   pyproject.toml
-|   README.md
-|   requirements.txt
-|   results.json
-|   run_all_product_scrapers.py
-|   run_product_scraper.py
-|   run_roaster.py
-|   structure_clean.txt
-|   __init__.py
-|   
-+---.ruff_cache
-|   |   .gitignore
-|   |   CACHEDIR.TAG
-+---common
-|   |   cache.py
-|   |   enricher.py
-|   |   exporter.py
-|   |   platform_detector.py
-|   |   pydantic_utils.py
-|   |   utils.py
-|   |   __init__.py
-|   |   
-+---data
-|   +---input
-|   |       roasters.json
-|   |       roasters_input.csv
-|   |       
-|               
-+---db
-|   |   models.py
-|   |   supabase.py
-|   |   __init__.py
-|   |   
-|   \---__pycache__
-|           models.cpython-313.pyc
-|           supabase.cpython-313.pyc
-|           __init__.cpython-313.pyc
-|           
-+---field_stability
-|       categories.py
-|       manage_stability.py
-|       mapping.py
-|       rationale.md
-|       utils.py
-|       __init__.py
-|
-+---scrapers
-|   |   __init__.py
-|   |   
-|   +---product
-|   |   |   scraper.py
-|   |   |   shopify.py
-|   |   |   static.py
-|   |   |   woocommerce.py
-|   |   |   __init__.py
-|   |   |   
-|   |   +---enrichment
-|   |   |       deepseek.py
-|   |   |       __init__.py
-|   |   |       
-|   |   \---extractors
-|   |           attributes.py
-|   |           normalizers.py
-|   |           price.py
-|   |           validators.py
-|   |           __init__.py
-|   |           
-|   +---product_crawl4ai
-|   |   |   architecture.md
-|   |   |   run_product_scraper.py
-|   |   |   scraper.py
-|   |   |   __init__.py
-|   |   |   
-|   |   +---api_extractors
-|   |   |   |   shopify.py
-|   |   |   |   woocommerce.py
-|   |   |   |   __init__.py
-|   |   |   |   
-|   |   +---discovery
-|   |   |   |   deep_crawler.py
-|   |   |   |   __init__.py
-|   |   |           
-|   |   +---enrichment
-|   |   |   |   llm_extractor.py
-|   |   |   |   schema.py
-|   |   |   |   __init__.py
-|   |   |   |   
-|   |   +---validators
-|   |   |   |   coffee.py
-|   +---roaster
-|   |       about.py
-|   |       batch.py
-|   |       crawl4ai_enricher.py
-|   |       enricher.py
-|   |       extractors.py
-|   |       location.py
-|   |       scraper.py
-|   |       selectors.py
-|   |       __init__.py
-|   |       
-|   +---roasters_crawl4ai
-|   |   |   batch.py
-|   |   |   crawler.py
-|   |   |   enricher.py
-|   |   |   platform_pages.py
-|   |   |   README.md
-|   |   |   run.py
-|   |   |   schemas.py
-|   |   |   __init__.py
+./
+    .env
+    .gitignore
+    ast-analyzer.py
+    check.py
+    config.py
+    file-tree.py
+    main.py
+    project_structure.txt
+    pyproject.toml
+    README.md
+    requirements.txt
+    results.json
+    run_all_product_scrapers.py
+    run_product_scraper.py
+    run_roaster.py
+    structure_clean.txt
+    triage-errors.py
+    ULTIMATE_cleanup_report.md
+    __init__.py
+    common/
+        cache.py
+        enricher.py
+        exporter.py
+        platform_detector.py
+        pydantic_utils.py
+        utils.py
+        __init__.py
+    db/
+        models.py
+        supabase.py
+        __init__.py
+    field_stability/
+        categories.py
+        manage_stability.py
+        mapping.py
+        rationale.md
+        utils.py
+        __init__.py
+    logs/
+        coffee_scraper_20250625.log
+    scrapers/
+        __init__.py
+        product_crawl4ai/
+            architecture.md
+            scraper.py
+            __init__.py
+            api_extractors/
+                shopify.py
+                woocommerce.py
+                __init__.py
+            discovery/
+                deep_crawler.py
+                __init__.py
+            enrichment/
+                llm_extractor.py
+                schema.py
+                __init__.py
+            validators/
+                coffee.py
+        roaster/
+            about.py
+            batch.py
+            crawl4ai_enricher.py
+            enricher.py
+            extractors.py
+            location.py
+            scraper.py
+            selectors.py
+            __init__.py
+        roasters_crawl4ai/
+            batch.py
+            crawler.py
+            enricher.py
+            platform_pages.py
+            README.md
+            run.py
+            schemas.py
+            __init__.py
+    scripts/
+        coffee_scraper_prd.md
+        example_prd.txt
+        ruff_tests.md

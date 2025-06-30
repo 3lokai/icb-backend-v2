@@ -5,8 +5,8 @@
 ## Executive Summary
 
 - **MyPy Issues**: 17 files with type issues
-- **Ruff Issues**: 5 categories with problems
-- **Coffee-Specific Issues**: 7 found
+- **Ruff Issues**: 3 categories with problems
+- **Coffee-Specific Issues**: 8 found
 
 ## Coffee Scraper Specific Issues (TOP PRIORITY)
 
@@ -23,46 +23,21 @@
 
 ### main.py
 ```
-scrapers\roasters_crawl4ai\platform_pages.py:1: error: Incompatible default for argument "platform" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\product_crawl4ai\enrichment\llm_extractor.py:17: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:10: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
+common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
+common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:873: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:86: error: Missing return statement  [return]
-scrapers\product_crawl4ai\api_extractors\shopify.py:387: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:596: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "price_ratio" is not defined  [name-defined]
-scrapers\roasters_crawl4ai\enricher.py:6: error: Module "common.enricher" has no attribute "enricher"  [attr-defined]
-scrapers\roasters_crawl4ai\enricher.py:14: error: Incompatible default for argument "extracted_html" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\enricher.py:14: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\enricher.py:14: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "cache_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "get_cached_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:177: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
-scrapers\roasters_crawl4ai\crawler.py:15: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
+scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
+scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
 scrapers\roasters_crawl4ai\crawler.py:184: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roasters_crawl4ai\crawler.py:268: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:16: error: Module "common.cache" has no attribute "cache"  [attr-defined]
 scrapers\roasters_crawl4ai\batch.py:28: error: Need type annotation for "_calls" (hint: "_calls: list[<type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:39: error: Missing return statement  [return]
-scrapers\roasters_crawl4ai\run.py:16: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\run.py:16: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:16: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roasters_crawl4ai\run.py:17: error: Incompatible default for argument "limit" (default has type "None", argument has type "int")  [assignment]
-scrapers\roasters_crawl4ai\run.py:17: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:17: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-main.py:20: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-Found 31 errors in 10 files (checked 1 source file)
+Found 14 errors in 6 files (checked 1 source file)
 
 ```
 
@@ -100,103 +75,54 @@ scrapers\roaster\location.py:9: error: Library stubs not installed for "requests
 scrapers\roaster\location.py:9: note: Hint: "python3 -m pip install types-requests"
 scrapers\roaster\location.py:9: note: (or run "mypy --install-types" to install all missing stub packages)
 scrapers\roaster\location.py:9: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
-scrapers\product_crawl4ai\enrichment\llm_extractor.py:17: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:10: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:873: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:86: error: Missing return statement  [return]
-scrapers\product_crawl4ai\api_extractors\shopify.py:387: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:596: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "price_ratio" is not defined  [name-defined]
+common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
+common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
 scrapers\roaster\about.py:19: error: Need type annotation for "about_data" (hint: "about_data: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roaster\scraper.py:11: error: Module "common.cache" has no attribute "cache"  [attr-defined]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
+scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roaster\scraper.py:12: error: Module "common.platform_detector" has no attribute "detect_platform"  [attr-defined]
 scrapers\roaster\scraper.py:13: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "cache_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "get_cached_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:177: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
+scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
 scrapers\roaster\batch.py:15: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
 scrapers\roaster\batch.py:15: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
 scrapers\roaster\batch.py:15: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
 scrapers\roaster\batch.py:15: error: Incompatible default for argument "limit" (default has type "None", argument has type "int")  [assignment]
-Found 34 errors in 10 files (checked 1 source file)
+Found 25 errors in 10 files (checked 1 source file)
 
 ```
 
 ### run_all_product_scrapers.py
 ```
-scrapers\roasters_crawl4ai\platform_pages.py:1: error: Incompatible default for argument "platform" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\product_crawl4ai\enrichment\llm_extractor.py:17: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:9: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:10: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
+common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
+common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:40: error: Need type annotation for "extracted_attrs" (hint: "extracted_attrs: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:186: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\woocommerce.py:192: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
 scrapers\product_crawl4ai\api_extractors\woocommerce.py:632: error: Need type annotation for "metadata" (hint: "metadata: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:873: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:86: error: Missing return statement  [return]
-scrapers\product_crawl4ai\api_extractors\shopify.py:387: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:596: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "size_diff" is not defined  [name-defined]
-scrapers\product_crawl4ai\api_extractors\shopify.py:680: error: Name "price_ratio" is not defined  [name-defined]
-scrapers\roasters_crawl4ai\enricher.py:6: error: Module "common.enricher" has no attribute "enricher"  [attr-defined]
-scrapers\roasters_crawl4ai\enricher.py:14: error: Incompatible default for argument "extracted_html" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\enricher.py:14: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\enricher.py:14: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "cache_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:8: error: Module "common.cache" has no attribute "get_cached_products"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "dict_to_pydantic_model"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:10: error: Module "common.pydantic_utils" has no attribute "preprocess_coffee_data"  [attr-defined]
-scrapers\product_crawl4ai\scraper.py:177: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
-scrapers\roasters_crawl4ai\crawler.py:15: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
+scrapers\product_crawl4ai\api_extractors\shopify.py:224: error: Argument 1 to "append" of "list" has incompatible type "dict[str, Any]"; expected "Coffee"  [arg-type]
+scrapers\product_crawl4ai\api_extractors\shopify.py:230: error: Incompatible return value type (got "list[Coffee]", expected "list[dict[str, Any]]")  [return-value]
+scrapers\product_crawl4ai\api_extractors\shopify.py:389: error: Name "extract_brew_methods_from_grind_size" is not defined  [name-defined]
+scrapers\product_crawl4ai\api_extractors\shopify.py:598: error: Need type annotation for "prices_by_size" (hint: "prices_by_size: dict[<type>, <type>] = ...")  [var-annotated]
+scrapers\product_crawl4ai\scraper.py:183: error: Incompatible types in assignment (expression has type "dict[str, Any] | None", variable has type "dict[str, Any]")  [assignment]
 scrapers\roasters_crawl4ai\crawler.py:184: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roasters_crawl4ai\crawler.py:268: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:16: error: Module "common.cache" has no attribute "cache"  [attr-defined]
 scrapers\roasters_crawl4ai\batch.py:28: error: Need type annotation for "_calls" (hint: "_calls: list[<type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:39: error: Missing return statement  [return]
-scrapers\roasters_crawl4ai\run.py:16: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\run.py:16: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:16: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roasters_crawl4ai\run.py:17: error: Incompatible default for argument "limit" (default has type "None", argument has type "int")  [assignment]
-scrapers\roasters_crawl4ai\run.py:17: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:17: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-Found 30 errors in 9 files (checked 1 source file)
+Found 14 errors in 6 files (checked 1 source file)
 
 ```
 
 ### run_roaster.py
 ```
-scrapers\roasters_crawl4ai\platform_pages.py:1: error: Incompatible default for argument "platform" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\platform_pages.py:1: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roasters_crawl4ai\enricher.py:6: error: Module "common.enricher" has no attribute "enricher"  [attr-defined]
-scrapers\roasters_crawl4ai\enricher.py:14: error: Incompatible default for argument "extracted_html" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\enricher.py:14: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\enricher.py:14: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roasters_crawl4ai\crawler.py:15: error: Module "common.utils" has no attribute "create_slug"  [attr-defined]
 scrapers\roasters_crawl4ai\crawler.py:184: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
 scrapers\roasters_crawl4ai\crawler.py:268: error: Need type annotation for "results" (hint: "results: dict[<type>, <type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:16: error: Module "common.cache" has no attribute "cache"  [attr-defined]
 scrapers\roasters_crawl4ai\batch.py:28: error: Need type annotation for "_calls" (hint: "_calls: list[<type>] = ...")  [var-annotated]
-scrapers\roasters_crawl4ai\batch.py:39: error: Missing return statement  [return]
-scrapers\roasters_crawl4ai\run.py:16: error: Incompatible default for argument "output_path" (default has type "None", argument has type "str")  [assignment]
-scrapers\roasters_crawl4ai\run.py:16: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:16: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-scrapers\roasters_crawl4ai\run.py:17: error: Incompatible default for argument "limit" (default has type "None", argument has type "int")  [assignment]
-scrapers\roasters_crawl4ai\run.py:17: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
-scrapers\roasters_crawl4ai\run.py:17: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
-Found 11 errors in 5 files (checked 1 source file)
+Found 3 errors in 2 files (checked 1 source file)
 
 ```
 
@@ -224,6 +150,12 @@ check.py:29: error: Need type annotation for "common_functions" (hint: "common_f
 check.py:197: error: Need type annotation for "issues"  [var-annotated]
 check.py:243: error: Need type annotation for "file_info"  [var-annotated]
 Found 7 errors in 1 file (checked 1 source file)
+
+```
+
+### file-tree.py
+```
+Success: no issues found in 1 source file
 
 ```
 
@@ -267,13 +199,9 @@ Success: no issues found in 1 source file
 
 ### common\pydantic_utils.py
 ```
-Success: no issues found in 1 source file
-
-```
-
-### common\utils.py
-```
-Success: no issues found in 1 source file
+common\pydantic_utils.py:65: error: Incompatible types in assignment (expression has type "dict[str, Any]", target has type "str")  [assignment]
+common\pydantic_utils.py:67: error: Incompatible types in assignment (expression has type "list[dict[str, Any] | str | Any]", target has type "str")  [assignment]
+Found 2 errors in 1 file (checked 1 source file)
 
 ```
 
@@ -281,389 +209,92 @@ Success: no issues found in 1 source file
 
 ### Basic Issues
 ```
-main.py:65:1: F811 Redefinition of unused `logger` from line 16
-   |
-65 | logger = setup_logging()
-   | ^^^^^^ F811
-   |
-   = help: Remove definition: `logger`
-
-main.py:434:12: F821 Undefined name `is_csv`
+main.py:451:14: F821 Undefined name `json`
     |
-432 |             return
-433 |
-434 |         if is_csv:
-    |            ^^^^^^ F821
-435 |             # Output as CSV using standardized exporter
-436 |             output = output or "roasters.csv"
-    |
-
-main.py:456:14: F821 Undefined name `json`
-    |
-454 |             click.echo(f"Wrote {len(roasters)} roasters to {output}")
-455 |
-456 |         elif json:
+449 |             click.echo(f"Wrote {len(roasters)} roasters to {output}")
+450 |
+451 |         elif json:
     |              ^^^^ F821
-457 |             # Output as JSON using standardized exporter
-458 |             json_output = json_output or "roasters.json"
+452 |             # Output as JSON using standardized exporter
+453 |             json_output = json_output or "roasters.json"
     |
 
-main.py:458:27: F821 Undefined name `json_output`
+main.py:453:27: F821 Undefined name `json_output`
     |
-456 |         elif json:
-457 |             # Output as JSON using standardized exporter
-458 |             json_output = json_output or "roasters.json"
+451 |         elif json:
+452 |             # Output as JSON using standardized exporter
+453 |             json_output = json_output or "roasters.json"
     |                           ^^^^^^^^^^^ F821
-459 |             export_to_json(
-460 |                 [
+454 |             export_to_json(
+455 |                 [
     |
 
-main.py:558:41: F821 Undefined name `scraper`
+main.py:551:41: F821 Undefined name `scraper`
     |
-557 |                         # Scrape products
-558 |                         results = await scraper.scrape_products(
+550 |                         # Scrape products
+551 |                         results = await scraper.scrape_products(
     |                                         ^^^^^^^ F821
-559 |                             roaster_id=roaster.id,
-560 |                             url=str(roaster.website_url),  # Ensure URL is string
+552 |                             roaster_id=roaster.id,
+553 |                             url=str(roaster.website_url),  # Ensure URL is string
     |
 
-run_all_product_scrapers.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+run_product_scraper.py:59:32: F821 Undefined name `scrape_roasters`
    |
- 4 |   """
- 5 |
- 6 | / import csv
- 7 | | import re
- 8 | | import sys
- 9 | | from pathlib import Path
-10 | | from common.utils import slugify
-   | |________________________________^ I001
-11 |
-12 |   INPUT_CSV = "data/input/roasters_input.csv"
-   |
-   = help: Organize imports
-
-run_all_product_scrapers.py:7:8: F401 [*] `re` imported but unused
-  |
-6 | import csv
-7 | import re
-  |        ^^ F401
-8 | import sys
-9 | from pathlib import Path
-  |
-  = help: Remove unused import: `re`
-
-run_all_product_scrapers.py:20:1: E402 Module level import not at top of file
-   |
-18 | OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-19 |
-20 | import asyncio
-   | ^^^^^^^^^^^^^^ E402
-21 | import logging
-22 | import sys
-   |
-
-run_all_product_scrapers.py:21:1: E402 Module level import not at top of file
-   |
-20 | import asyncio
-21 | import logging
-   | ^^^^^^^^^^^^^^ E402
-22 | import sys
-23 | from pathlib import Path
-   |
-
-run_all_product_scrapers.py:22:1: E402 Module level import not at top of file
-   |
-20 | import asyncio
-21 | import logging
-22 | import sys
-   | ^^^^^^^^^^ E402
-23 | from pathlib import Path
-   |
-
-run_all_product_scrapers.py:23:1: E402 Module level import not at top of file
-   |
-21 | import logging
-22 | import sys
-23 | from pathlib import Path
-   | ^^^^^^^^^^^^^^^^^^^^^^^^ E402
-24 |
-25 | from db.supabase import supabase
-   |
-
-run_all_product_scrapers.py:25:1: E402 Module level import not at top of file
-   |
-23 | from pathlib import Path
-24 |
-25 | from db.supabase import supabase
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
-26 | from scrapers.product_crawl4ai.scraper import ProductScraper
-27 | from scrapers.roasters_crawl4ai.run import process_single as extract_roaster
-   |
-
-run_all_product_scrapers.py:26:1: E402 Module level import not at top of file
-   |
-25 | from db.supabase import supabase
-26 | from scrapers.product_crawl4ai.scraper import ProductScraper
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
-27 | from scrapers.roasters_crawl4ai.run import process_single as extract_roaster
-   |
-
-run_all_product_scrapers.py:27:1: E402 Module level import not at top of file
-   |
-25 | from db.supabase import supabase
-26 | from scrapers.product_crawl4ai.scraper import ProductScraper
-27 | from scrapers.roasters_crawl4ai.run import process_single as extract_roaster
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
-28 |
-29 | logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-   |
-
-run_product_scraper.py:7:1: I001 [*] Import block is un-sorted or un-formatted
-   |
- 5 |   """
- 6 |
- 7 | / import sys
- 8 | | import argparse
- 9 | | import json
-10 | | from pathlib import Path
-11 | |
-12 | | from scrapers.product_crawl4ai.scraper import ProductScraper
-   | |____________________________________________________________^ I001
-   |
-   = help: Organize imports
-
-run_product_scraper.py:57:32: F821 Undefined name `scrape_roasters`
-   |
-55 |             return asyncio.run(scrape_roaster_link(args))
-56 |         else:
-57 |             return asyncio.run(scrape_roasters(args))
+57 |             return asyncio.run(scrape_roaster_link(args))
+58 |         else:
+59 |             return asyncio.run(scrape_roasters(args))
    |                                ^^^^^^^^^^^^^^^ F821
-58 |     elif args.command == "url":
-59 |         return asyncio.run(scrape_single_url(args))
+60 |     elif args.command == "url":
+61 |         return asyncio.run(scrape_single_url(args))
    |
 
-run_product_scraper.py:59:28: F821 Undefined name `scrape_single_url`
+run_product_scraper.py:61:28: F821 Undefined name `scrape_single_url`
    |
-57 |             return asyncio.run(scrape_roasters(args))
-58 |     elif args.command == "url":
-59 |         return asyncio.run(scrape_single_url(args))
+59 |             return asyncio.run(scrape_roasters(args))
+60 |     elif args.command == "url":
+61 |         return asyncio.run(scrape_single_url(args))
    |                            ^^^^^^^^^^^^^^^^^ F821
-60 |     elif args.command == "validate":
-61 |         # Handle validation command
+62 |     elif args.command == "validate":
+63 |         # Handle validation command
    |
 
-run_product_scraper.py:83:13: F821 Undefined name `logger`
-   |
-82 |         if not roaster:
-83 |             logger.error(f"Failed to scrape roaster from {args.roaster_link}")
-   |             ^^^^^^ F821
-84 |             return 1
-   |
-
-run_product_scraper.py:104:9: F821 Undefined name `logger`
+run_product_scraper.py:140:28: F821 Undefined name `standardize_coffee_model`
     |
-102 |             json.dump(products, f, indent=2, ensure_ascii=False)
-103 |
-104 |         logger.info(f"Scraped {len(products)} products from {args.roaster_link}")
-    |         ^^^^^^ F821
-105 |
-106 |         # Print summary
-    |
-
-run_product_scraper.py:117:9: F821 Undefined name `logger`
-    |
-116 |     except Exception as e:
-117 |         logger.error(f"Error scraping roaster or products: {e}")
-    |         ^^^^^^ F821
-118 |         return 1
-    |
-
-run_product_scraper.py:129:13: F821 Undefined name `logger`
-    |
-128 |         if not isinstance(products, list):
-129 |             logger.error(f"Invalid product data format in {args.input}. Expected a list.")
-    |             ^^^^^^ F821
-130 |             return 1
-    |
-
-run_product_scraper.py:132:9: F821 Undefined name `logger`
-    |
-130 |             return 1
-131 |
-132 |         logger.info(f"Validating {len(products)} products")
-    |         ^^^^^^ F821
-133 |
-134 |         # Process each product
-    |
-
-run_product_scraper.py:138:28: F821 Undefined name `standardize_coffee_model`
-    |
-136 |         for product in products:
-137 |             # Standardize model
-138 |             standardized = standardize_coffee_model(product)
+138 |         for product in products:
+139 |             # Standardize model
+140 |             standardized = standardize_coffee_model(product)
     |                            ^^^^^^^^^^^^^^^^^^^^^^^^ F821
-139 |
-140 |             # Validate fields
+141 |
+142 |             # Validate fields
     |
 
-run_product_scraper.py:141:34: F821 Undefined name `validate_coffee_product`
+run_product_scraper.py:143:34: F821 Undefined name `validate_coffee_product`
     |
-140 |             # Validate fields
-141 |             validation_results = validate_coffee_product(standardized)
+142 |             # Validate fields
+143 |             validation_results = validate_coffee_product(standardized)
     |                                  ^^^^^^^^^^^^^^^^^^^^^^^ F821
-142 |             fixed = apply_validation_corrections(standardized, validation_results)
+144 |             fixed = apply_validation_corrections(standardized, validation_results)
     |
 
-run_product_scraper.py:142:21: F821 Undefined name `apply_validation_corrections`
+run_product_scraper.py:144:21: F821 Undefined name `apply_validation_corrections`
     |
-140 |             # Validate fields
-141 |             validation_results = validate_coffee_product(standardized)
-142 |             fixed = apply_validation_corrections(standardized, validation_results)
+142 |             # Validate fields
+143 |             validation_results = validate_coffee_product(standardized)
+144 |             fixed = apply_validation_corrections(standardized, validation_results)
     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ F821
-143 |
-144 |             fixed_products.append(fixed)
+145 |
+146 |             fixed_products.append(fixed)
     |
 
-run_product_scraper.py:153:9: F821 Undefined name `logger`
+scrapers\product_crawl4ai\api_extractors\shopify.py:389:32: F821 Undefined name `extract_brew_methods_from_grind_size`
     |
-151 |             json.dump(fixed_products, f, indent=2, ensure_ascii=False)
-152 |
-153 |         logger.info(f"Validated and fixed {len(fixed_products)} products")
-    |         ^^^^^^ F821
-154 |         logger.info(f"Saved to {output_path}")
-    |
-
-run_product_scraper.py:154:9: F821 Undefined name `logger`
-    |
-153 |         logger.info(f"Validated and fixed {len(fixed_products)} products")
-154 |         logger.info(f"Saved to {output_path}")
-    |         ^^^^^^ F821
-155 |
-156 |         return 0
-    |
-
-run_product_scraper.py:159:9: F821 Undefined name `logger`
-    |
-158 |     except Exception as e:
-159 |         logger.error(f"Error validating products: {e}")
-    |         ^^^^^^ F821
-160 |         return 1
-    |
-
-scrapers\product\extractors\attributes.py:651:43: E712 Avoid equality comparisons to `False`; use `not coffee["is_single_origin"]:` for false checks
-    |
-649 |     if "bean_type" in coffee and coffee["bean_type"] == "blend":
-650 |         blend_detected = True
-651 |     elif "is_single_origin" in coffee and coffee["is_single_origin"] == False:
-    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E712
-652 |         blend_detected = True
-653 |     elif "blend" in name.lower():
-    |
-    = help: Replace with `not coffee["is_single_origin"]`
-
-scrapers\product\woocommerce.py:100:17: F841 Local variable `products_url_normalized` is assigned to but never used
-    |
- 98 |             try:
- 99 |                 # Check cache first
-100 |                 products_url_normalized = normalize_url(products_url)
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^ F841
-101 |                 cache_key = f"woo_{get_domain_from_url(base_url)}_{endpoint.replace('/', '_')}"
-102 |                 cached_data = get_cached_html(cache_key)
-    |
-    = help: Remove assignment to unused variable `products_url_normalized`
-
-scrapers\product\woocommerce.py:615:13: F841 Local variable `weight_prices` is assigned to but never used
-    |
-613 |             weight_options = re.findall(r'<option[^>]*value="([^"]+)"[^>]*>([^<]+)', variants_html)
-614 |
-615 |             weight_prices = []
-    |             ^^^^^^^^^^^^^ F841
-616 |             for value, label in weight_options:
-617 |                 # Skip empty or default options
-    |
-    = help: Remove assignment to unused variable `weight_prices`
-
-scrapers\product_crawl4ai\api_extractors\shopify.py:387:32: F821 Undefined name `extract_brew_methods_from_grind_size`
-    |
-385 |         if any(term in option.get("name", "").lower() for term in ["grind", "grind size", "grind-size"]):
-386 |             for value in option.get("values", []):
-387 |                 brew_methods = extract_brew_methods_from_grind_size(value)
+387 |         if any(term in option.get("name", "").lower() for term in ["grind", "grind size", "grind-size"]):
+388 |             for value in option.get("values", []):
+389 |                 brew_methods = extract_brew_methods_from_grind_size(value)
     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ F821
-388 |                 if brew_methods:
-389 |                     if not product["brew_methods"]:
+390 |                 if brew_methods:
+391 |                     if not product["brew_methods"]:
     |
-
-scrapers\product_crawl4ai\api_extractors\shopify.py:678:13: F841 Local variable `size_ratio` is assigned to but never used
-    |
-676 |         if lower["size_grams"] <= target_size <= upper["size_grams"]:
-677 |             # Linear interpolation
-678 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-    |             ^^^^^^^^^^ F841
-679 |             price_diff = upper["price"] - lower["price"]
-680 |             return lower["price"] + (size_diff * price_ratio)
-    |
-    = help: Remove assignment to unused variable `size_ratio`
-
-scrapers\product_crawl4ai\api_extractors\shopify.py:679:13: F841 Local variable `price_diff` is assigned to but never used
-    |
-677 |             # Linear interpolation
-678 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-679 |             price_diff = upper["price"] - lower["price"]
-    |             ^^^^^^^^^^ F841
-680 |             return lower["price"] + (size_diff * price_ratio)
-    |
-    = help: Remove assignment to unused variable `price_diff`
-
-scrapers\product_crawl4ai\api_extractors\shopify.py:680:38: F821 Undefined name `size_diff`
-    |
-678 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-679 |             price_diff = upper["price"] - lower["price"]
-680 |             return lower["price"] + (size_diff * price_ratio)
-    |                                      ^^^^^^^^^ F821
-681 |
-682 |     # Fallback: use the closest size
-    |
-
-scrapers\product_crawl4ai\api_extractors\shopify.py:680:50: F821 Undefined name `price_ratio`
-    |
-678 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-679 |             price_diff = upper["price"] - lower["price"]
-680 |             return lower["price"] + (size_diff * price_ratio)
-    |                                                  ^^^^^^^^^^^ F821
-681 |
-682 |     # Fallback: use the closest size
-    |
-
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:872:13: F841 Local variable `price_diff` is assigned to but never used
-    |
-870 |             # Linear interpolation
-871 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-872 |             price_diff = upper["price"] - lower["price"]
-    |             ^^^^^^^^^^ F841
-873 |             return lower["price"] + (size_diff * size_ratio)
-    |
-    = help: Remove assignment to unused variable `price_diff`
-
-scrapers\product_crawl4ai\api_extractors\woocommerce.py:873:38: F821 Undefined name `size_diff`
-    |
-871 |             size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-872 |             price_diff = upper["price"] - lower["price"]
-873 |             return lower["price"] + (size_diff * size_ratio)
-    |                                      ^^^^^^^^^ F821
-874 |
-875 |     # Fallback: use the closest size
-    |
-
-scrapers\product_crawl4ai\enrichment\llm_extractor.py:168:17: F841 Local variable `js_product_name` is assigned to but never used
-    |
-166 |             js_product_name = ""
-167 |             if hasattr(result, "js_result") and result.js_result and isinstance(result.js_result, dict):
-168 |                 js_product_name = result.js_result.get("productName", "")
-    |                 ^^^^^^^^^^^^^^^ F841
-169 |
-170 |             if result.success and result.extracted_content:
-    |
-    = help: Remove assignment to unused variable `js_product_name`
 
 scrapers\roaster\crawl4ai_enricher.py:25:5: E731 Do not assign a `lambda` expression, use a `def`
    |
@@ -674,82 +305,14 @@ scrapers\roaster\crawl4ai_enricher.py:25:5: E731 Do not assign a `lambda` expres
    |
    = help: Rewrite `Field` as a `def`
 
-tests\test_product_crawl4ai_extractors.py:12:1: E402 Module level import not at top of file
-   |
-10 |     sys.path.insert(0, PROJECT_ROOT)
-11 |
-12 | from scrapers.product_crawl4ai.api_extractors import shopify, woocommerce
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
-   |
-
-tests\test_product_crawl4ai_scraper.py:90:9: F841 Local variable `test_instance_or_fixture` is assigned to but never used
-   |
-88 |         # args needs to include all mocks defined by @patch decorators
-89 |         # The instance of the test class (if any) or the scraper_instance fixture
-90 |         test_instance_or_fixture = args[0] if args and isinstance(args[0], ProductScraper) else args[1]
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^ F841
-91 |
-92 |         # If platform_detector was patched as an attribute of the instance (it is on ProductScraper)
-   |
-   = help: Remove assignment to unused variable `test_instance_or_fixture`
-
-Found 42 errors.
-[*] 3 fixable with the `--fix` option (9 hidden fixes can be enabled with the `--unsafe-fixes` option).
+Found 10 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
 
 ```
 
-### Imports Issues
-```
-run_all_product_scrapers.py:6:1: I001 [*] Import block is un-sorted or un-formatted
-   |
- 4 |   """
- 5 |
- 6 | / import csv
- 7 | | import re
- 8 | | import sys
- 9 | | from pathlib import Path
-10 | | from common.utils import slugify
-   | |________________________________^ I001
-11 |
-12 |   INPUT_CSV = "data/input/roasters_input.csv"
-   |
-   = help: Organize imports
+### Imports - Clean!
 
-run_product_scraper.py:7:1: I001 [*] Import block is un-sorted or un-formatted
-   |
- 5 |   """
- 6 |
- 7 | / import sys
- 8 | | import argparse
- 9 | | import json
-10 | | from pathlib import Path
-11 | |
-12 | | from scrapers.product_crawl4ai.scraper import ProductScraper
-   | |____________________________________________________________^ I001
-   |
-   = help: Organize imports
-
-Found 2 errors.
-[*] 2 fixable with the `--fix` option.
-
-```
-
-### Unused Issues
-```
-run_all_product_scrapers.py:7:8: F401 [*] `re` imported but unused
-  |
-6 | import csv
-7 | import re
-  |        ^^ F401
-8 | import sys
-9 | from pathlib import Path
-  |
-  = help: Remove unused import: `re`
-
-Found 1 error.
-[*] 1 fixable with the `--fix` option.
-
-```
+### Unused - Clean!
 
 ### Complexity - Clean!
 
@@ -814,34 +377,27 @@ common\cache.py:53:16: S324 Probable use of insecure hash functions in `hashlib`
 55 |     def get_cached_html(self, url: str, max_age_days: int = 7, field_stability: Optional[str] = None) -> Optional[str]:
    |
 
-scrapers\product\shopify.py:60:26: S311 Standard pseudo-random generators are not suitable for cryptographic purposes
-   |
-58 |             if elapsed < self.delay:
-59 |                 # Add jitter to avoid thundering herd
-60 |                 jitter = random.uniform(0, 0.1)
-   |                          ^^^^^^^^^^^^^^^^^^^^^^ S311
-61 |                 sleep_time = self.delay - elapsed + jitter
-62 |                 await asyncio.sleep(sleep_time)
-   |
-
-scrapers\product\static.py:200:16: S314 Using `xml` to parse untrusted data is known to be vulnerable to XML attacks; use `defusedxml` equivalents
+common\pydantic_utils.py:112:17: S110 `try`-`except`-`pass` detected, consider logging the exception
     |
-199 |     try:
-200 |         root = ET.fromstring(sitemap_xml)
-    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^ S314
-201 |
-202 |         # Define XML namespaces
+110 |                   try:
+111 |                       v = float(v)
+112 | /                 except Exception:
+113 | |                     pass
+    | |________________________^ S110
+114 |               else:
+115 |                   try:
     |
 
-scrapers\product\woocommerce.py:62:26: S311 Standard pseudo-random generators are not suitable for cryptographic purposes
-   |
-60 |             if elapsed < self.delay:
-61 |                 # Add jitter to avoid thundering herd
-62 |                 jitter = random.uniform(0, 0.1)
-   |                          ^^^^^^^^^^^^^^^^^^^^^^ S311
-63 |                 sleep_time = self.delay - elapsed + jitter
-64 |                 await asyncio.sleep(sleep_time)
-   |
+common\pydantic_utils.py:117:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+    |
+115 |                   try:
+116 |                       v = int(v)
+117 | /                 except Exception:
+118 | |                     pass
+    | |________________________^ S110
+119 |           # Recursively handle nested models/lists
+120 |           if isinstance(v, list):
+    |
 
 scrapers\roaster\scraper.py:211:13: S112 `try`-`except`-`continue` detected, consider logging the exception
     |
@@ -1646,7 +1202,7 @@ tests\test_product_crawl4ai_extractors.py:39:5: S101 Use of `assert` detected
 39 |     assert isinstance(products, list)
    |     ^^^^^^ S101
 40 |     assert products
-41 |     assert products[0].name == "Test Coffee"
+41 |     assert products[0]["name"] == "Test Coffee"
    |
 
 tests\test_product_crawl4ai_extractors.py:40:5: S101 Use of `assert` detected
@@ -1655,14 +1211,14 @@ tests\test_product_crawl4ai_extractors.py:40:5: S101 Use of `assert` detected
 39 |     assert isinstance(products, list)
 40 |     assert products
    |     ^^^^^^ S101
-41 |     assert products[0].name == "Test Coffee"
+41 |     assert products[0]["name"] == "Test Coffee"
    |
 
 tests\test_product_crawl4ai_extractors.py:41:5: S101 Use of `assert` detected
    |
 39 |     assert isinstance(products, list)
 40 |     assert products
-41 |     assert products[0].name == "Test Coffee"
+41 |     assert products[0]["name"] == "Test Coffee"
    |     ^^^^^^ S101
    |
 
@@ -1672,7 +1228,7 @@ tests\test_product_crawl4ai_extractors.py:65:5: S101 Use of `assert` detected
 65 |     assert isinstance(products, list)
    |     ^^^^^^ S101
 66 |     assert products
-67 |     assert products[0].name == "Woo Coffee"
+67 |     assert products[0]["name"] == "Woo Coffee"
    |
 
 tests\test_product_crawl4ai_extractors.py:66:5: S101 Use of `assert` detected
@@ -1681,14 +1237,14 @@ tests\test_product_crawl4ai_extractors.py:66:5: S101 Use of `assert` detected
 65 |     assert isinstance(products, list)
 66 |     assert products
    |     ^^^^^^ S101
-67 |     assert products[0].name == "Woo Coffee"
+67 |     assert products[0]["name"] == "Woo Coffee"
    |
 
 tests\test_product_crawl4ai_extractors.py:67:5: S101 Use of `assert` detected
    |
 65 |     assert isinstance(products, list)
 66 |     assert products
-67 |     assert products[0].name == "Woo Coffee"
+67 |     assert products[0]["name"] == "Woo Coffee"
    |     ^^^^^^ S101
    |
 
@@ -1780,50 +1336,50 @@ tests\test_product_crawl4ai_extractors.py:114:5: S101 Use of `assert` detected
     |     ^^^^^^ S101
     |
 
-tests\test_product_crawl4ai_scraper.py:220:5: S101 Use of `assert` detected
+tests\test_product_crawl4ai_scraper.py:218:5: S101 Use of `assert` detected
     |
-218 |     mock_cache_products.assert_not_called()  # Not called because data came from cache
-219 |
-220 |     assert len(results) == 1
+216 |     mock_cache_products.assert_not_called()  # Not called because data came from cache
+217 |
+218 |     assert len(results) == 1
     |     ^^^^^^ S101
-221 |     assert results[0] == MOCKED_COFFEE_MODEL_1
+219 |     assert results[0] == MOCKED_COFFEE_MODEL_1
     |
 
-tests\test_product_crawl4ai_scraper.py:221:5: S101 Use of `assert` detected
+tests\test_product_crawl4ai_scraper.py:219:5: S101 Use of `assert` detected
     |
-220 |     assert len(results) == 1
-221 |     assert results[0] == MOCKED_COFFEE_MODEL_1
+218 |     assert len(results) == 1
+219 |     assert results[0] == MOCKED_COFFEE_MODEL_1
     |     ^^^^^^ S101
     |
 
-tests\test_product_crawl4ai_scraper.py:394:5: S101 Use of `assert` detected
+tests\test_product_crawl4ai_scraper.py:392:5: S101 Use of `assert` detected
     |
-392 |     )
-393 |
-394 |     assert results == []
+390 |     )
+391 |
+392 |     assert results == []
     |     ^^^^^^ S101
-395 |     mock_enrich.assert_not_called()
-396 |     mock_cache_products.assert_not_called()  # Cache should not be called if no products
+393 |     mock_enrich.assert_not_called()
+394 |     mock_cache_products.assert_not_called()  # Cache should not be called if no products
     |
 
-tests\test_product_crawl4ai_scraper.py:421:5: S101 Use of `assert` detected
+tests\test_product_crawl4ai_scraper.py:419:5: S101 Use of `assert` detected
     |
-419 |     )
-420 |
-421 |     assert results == []
+417 |     )
+418 |
+419 |     assert results == []
     |     ^^^^^^ S101
-422 |     mock_is_coffee.assert_called_once_with(
-423 |         RAW_PRODUCT_1.get("name", ""),
+420 |     mock_is_coffee.assert_called_once_with(
+421 |         RAW_PRODUCT_1.get("name", ""),
     |
 
-tests\test_product_crawl4ai_scraper.py:459:5: S101 Use of `assert` detected
+tests\test_product_crawl4ai_scraper.py:457:5: S101 Use of `assert` detected
     |
-457 |     )
-458 |
-459 |     assert results == []
+455 |     )
+456 |
+457 |     assert results == []
     |     ^^^^^^ S101
-460 |     mock_enrich.assert_called_once_with(RAW_PRODUCT_1, SAMPLE_ROASTER_NAME)
-461 |     mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1)
+458 |     mock_enrich.assert_called_once_with(RAW_PRODUCT_1, SAMPLE_ROASTER_NAME)
+459 |     mock_validate.assert_called_once_with(ENRICHED_PRODUCT_1)
     |
 
 tests\test_roasters_crawl4ai_batch.py:28:9: S101 Use of `assert` detected
@@ -2304,7 +1860,7 @@ tests\test_supabase_serialization.py:72:5: S101 Use of `assert` detected
    |     ^^^^^^ S101
    |
 
-Found 174 errors.
+Found 173 errors.
 
 ```
 

@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from scrapers.product_crawl4ai.api_extractors import shopify, woocommerce
+
 # Ensure project root is in sys.path for imports
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-
-from scrapers.product_crawl4ai.api_extractors import shopify, woocommerce
 
 
 # --- Shopify Extractor Tests ---
@@ -38,7 +38,7 @@ async def test_extract_products_shopify_success(mock_client):
     products = await shopify.extract_products_shopify("https://test.myshopify.com", "roaster123")
     assert isinstance(products, list)
     assert products
-    assert products[0].name == "Test Coffee"
+    assert products[0]["name"] == "Test Coffee"
 
 
 # --- WooCommerce Extractor Tests ---
@@ -64,7 +64,7 @@ async def test_extract_products_woocommerce_success(mock_client):
     products = await woocommerce.extract_products_woocommerce("https://test.com", "roaster456")
     assert isinstance(products, list)
     assert products
-    assert products[0].name == "Woo Coffee"
+    assert products[0]["name"] == "Woo Coffee"
 
 
 # --- Standardizer and Helper Tests ---

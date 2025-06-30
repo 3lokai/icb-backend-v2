@@ -9,9 +9,9 @@ import httpx
 from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
 from common.utils import (
     clean_description,
-    slugify,
     ensure_absolute_url,
     is_coffee_product,
+    slugify,
     standardize_bean_type,
     standardize_processing_method,
     standardize_roast_level,

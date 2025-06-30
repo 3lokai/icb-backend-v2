@@ -87,8 +87,6 @@ def patch_dependencies(func):
         # The last arg is usually the function itself if not bound, or a mock if it's part of the class
         # args needs to include all mocks defined by @patch decorators
         # The instance of the test class (if any) or the scraper_instance fixture
-        test_instance_or_fixture = args[0] if args and isinstance(args[0], ProductScraper) else args[1]
-
         # If platform_detector was patched as an attribute of the instance (it is on ProductScraper)
         # we can re-assign it here if needed, or ensure the global patch on PlatformDetector class is enough.
         # For this test, ProductScraper creates its own PlatformDetector.

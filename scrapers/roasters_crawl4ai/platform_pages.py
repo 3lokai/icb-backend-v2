@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 def get_platform_page_paths(platform: Optional[str] = None, page_type: str = "about"):
     """
     Return a list of about/contact page paths for the given platform.
