@@ -10,8 +10,18 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+# Debug: Print script and working directory info
+print("[DEBUG] Script directory:", Path(__file__).parent.resolve())
+print("[DEBUG] Current working directory:", Path.cwd())
+print("[DEBUG] .env exists in script dir:", (Path(__file__).parent / ".env").exists())
+
+# Debug: Print contents of .env file if it exists
+if (Path(__file__).parent / ".env").exists():
+    with open(Path(__file__).parent / ".env", "r") as f:
+        print("[DEBUG] Contents of .env being loaded:\n" + f.read())
+
 # Always load .env at the very top
-load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).parent / ".env", override=True)
 
 print("DEBUG: All environment variables:")
 for k, v in os.environ.items():
@@ -20,20 +30,6 @@ for k, v in os.environ.items():
 
 # Determine environment (dev, test, prod, etc.)
 ENV = os.getenv("ENV", "dev")
-
-# Try to load environment-specific .env file first
-base_dir = Path(__file__).resolve().parent
-env_dotenv = base_dir / f".env.{ENV}"
-default_dotenv = base_dir / ".env"
-if env_dotenv.exists():
-    load_dotenv(dotenv_path=env_dotenv)
-    print(f"Loaded environment: {ENV} from {env_dotenv}")
-elif default_dotenv.exists():
-    load_dotenv(dotenv_path=default_dotenv)
-    print(f"Loaded default .env from {default_dotenv}")
-else:
-    print(f"WARNING: No .env or .env.{ENV} file found in {base_dir}")
-
 
 # Base project directory
 BASE_DIR = Path(__file__).resolve().parent

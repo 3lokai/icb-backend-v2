@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent))
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig, LLMConfig
 from config import config
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
+from crawl4ai.extraction_strategy import LLMExtractionStrategy, JsonCssExtractionStrategy
 
 # Load environment variables
 load_dotenv(dotenv_path=Path(__file__).parent / ".env")
@@ -31,8 +31,8 @@ async def test_extraction():
             "name": {"type": "string", "description": "Product name"},
             "price": {"type": "number", "description": "Price in local currency"},
             "description": {"type": "string", "description": "Product description"},
-        },
-        "required": ["name"]
+        }
+        # No 'required' field, all fields optional
     }
     
     # Get OpenAI key from config
@@ -49,22 +49,7 @@ async def test_extraction():
         ),
         schema=minimal_schema,
         extraction_type="schema",
-        instruction="""
-        Extract basic product information from this page.
-        
-        Look for:
-        - Product name (required)
-        - Price (if available)
-        - Description (if available)
-        
-        Focus on the main product information. Look in:
-        - Page title
-        - Meta tags (og:title, product:price:amount, etc.)
-        - Product headings and price displays
-        - Product descriptions
-        
-        Only extract information that is clearly visible on the page.
-        """,
+        instruction="Extract the product name, price, and description from this page.",
         input_format="html",
         chunk_token_threshold=5000,
         apply_chunking=True,
@@ -78,7 +63,7 @@ async def test_extraction():
         cache_mode=CacheMode.ENABLED
     )
     
-    url = "https://www.ainmane.com/hardoor-estate.html"
+    url = "http://babasbeanscoffee.com/product/ms-estate/"
     
     print(f"Testing extraction on: {url}")
     
@@ -86,18 +71,45 @@ async def test_extraction():
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
             result = await crawler.arun(url=url, config=crawler_config)
             
+            # Print the markdown input if available
+            if hasattr(result, 'markdown') and result.markdown:
+                print("\n[DEBUG] MARKDOWN SENT TO LLM:\n" + result.markdown[:2000] + ("..." if len(result.markdown) > 2000 else ""))
+
             print(f"Success: {result.success}")
             print(f"Has extracted content: {bool(result.extracted_content)}")
             
             if result.extracted_content:
                 print(f"Extracted content: {result.extracted_content}")
+                # Print the raw LLM output before parsing
+                print("RAW LLM OUTPUT:")
+                print(result.extracted_content)
                 try:
                     parsed = json.loads(result.extracted_content)
                     print(f"Parsed JSON: {json.dumps(parsed, indent=2)}")
                 except json.JSONDecodeError as e:
                     print(f"JSON parse error: {e}")
             else:
-                print("No extracted content")
+                print("No extracted content from LLM. Trying CSS extraction as backup...")
+                # --- CSS Extraction Backup ---
+                css_schema = {
+                    "name": "TestProductNameExtraction",
+                    "baseSelector": "div.product-info-main",
+                    "fields": [
+                        {"name": "name", "selector": "h1.page-title span.base", "type": "text"}
+                    ]
+                }
+                css_strategy = JsonCssExtractionStrategy(css_schema, verbose=True)
+                css_crawler_config = CrawlerRunConfig(
+                    extraction_strategy=css_strategy,
+                    page_timeout=30000,
+                    cache_mode=CacheMode.ENABLED
+                )
+                css_result = await crawler.arun(url=url, config=css_crawler_config)
+                if css_result.success and css_result.extracted_content:
+                    print("[CSS Extraction] Extracted content:")
+                    print(css_result.extracted_content)
+                else:
+                    print("[CSS Extraction] No content extracted.")
                 if result.html:
                     print(f"HTML length: {len(result.html)}")
                     # Save HTML for inspection

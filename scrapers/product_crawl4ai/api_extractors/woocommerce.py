@@ -10,6 +10,7 @@ from common.pydantic_utils import dict_to_pydantic_model, preprocess_coffee_data
 from common.utils import (
     clean_description,
     ensure_absolute_url,
+    extract_brew_methods_from_grind_size,
     is_coffee_product,
     slugify,
     standardize_bean_type,
@@ -241,6 +242,7 @@ def standardize_woocommerce_product(
         "is_available": True,
         "is_featured": False,
         "deepseek_enriched": False,
+        "product_type": woo_product.get("type", woo_product.get("product_type", "")),  # Add product_type field
         "roast_level": None,
         "bean_type": None,
         "processing_method": None,
@@ -329,7 +331,22 @@ def standardize_woocommerce_product(
         else:
             logger.warning(f"Failed to extract any prices for {product['name']}")
 
-    # Extract metadata from product attributes
+    # Extract metadata from product attributes using enhanced methods
+    # Enhanced roast level and processing method extraction
+    product["roast_level"] = extract_roast_level_from_woocommerce(woo_product, product.get("tags", []))
+    product["bean_type"] = standardize_bean_type(
+        extract_attribute_from_woocommerce(
+            woo_product, "bean_type", ["bean type", "bean-type", "beans", "variety", "coffee_bean_type"]
+        )
+    )
+    product["processing_method"] = extract_processing_method_from_woocommerce(
+        woo_product, product.get("tags", []), product["name"], product["slug"]
+    )
+    product["region_name"] = extract_attribute_from_woocommerce(
+        woo_product, "region_name", ["origin", "region", "country", "coffee_origin"]
+    )
+
+    # Extract other attributes from product attributes
     if "attributes" in woo_product and woo_product["attributes"]:
         for attr in woo_product["attributes"]:
             attr_name = attr.get("name", "").lower()
@@ -344,15 +361,7 @@ def standardize_woocommerce_product(
 
             # Match attribute to our fields
             if attr_value:
-                if any(term in attr_name for term in ["roast", "roast level", "roast-level"]):
-                    product["roast_level"] = standardize_roast_level(attr_value)
-                elif any(term in attr_name for term in ["bean type", "bean-type", "beans", "variety"]):
-                    product["bean_type"] = standardize_bean_type(attr_value)
-                elif any(term in attr_name for term in ["process", "processing", "processing-method"]):
-                    product["processing_method"] = standardize_processing_method(attr_value)
-                elif any(term in attr_name for term in ["origin", "region", "country"]):
-                    product["region_name"] = attr_value
-                elif any(term in attr_name for term in ["acidity", "acid_level", "acidity level"]):
+                if any(term in attr_name for term in ["acidity", "acid_level", "acidity level"]):
                     product["acidity"] = attr_value
                 elif any(term in attr_name for term in ["body", "mouthfeel", "texture"]):
                     product["body"] = attr_value
@@ -482,27 +491,7 @@ def standardize_woocommerce_product(
     return product
 
 
-def extract_brew_methods_from_grind_size(grind_size: str) -> List[str]:
-    """Map grind size attributes to appropriate brewing methods."""
-    grind_to_method = {
-        "aero-press": ["aeropress"],
-        "aeropress": ["aeropress"],
-        "cold-brew": ["cold brew"],
-        "espresso": ["espresso"],
-        "french-press": ["french press"],
-        "french press": ["french press"],
-        "mocha-pot": ["moka pot"],
-        "moka pot": ["moka pot"],
-        "syphon": ["siphon"],
-        "v60": ["v60", "pour over"],
-        "chemex": ["chemex", "pour over"],
-        "pour-over": ["pour over"],
-        "pour over": ["pour over"],
-        "drip": ["drip"],
-        "filter": ["filter", "pour over"],
-    }
-    grind_size = grind_size.lower().strip()
-    return grind_to_method.get(grind_size, [])
+
 
 
 def _process_tags(tags: Union[List[Dict[str, str]], List[str], str]) -> List[str]:
@@ -1121,3 +1110,159 @@ def extract_estates(name: str, description: str, tags: List[str]) -> List[str]:
             estates.append(estate_name)
 
     return estates
+
+
+# --- Enhanced roast level extraction ---
+def extract_roast_level_from_woocommerce(woo_product: Dict[str, Any], tags: List[str]) -> str:
+    """Extract roast level from tags, slug, or title, using standardizer directly."""
+    # First check tags for direct roast level indications
+    for tag in tags:
+        tag_lower = tag.lower()
+        if "roast" in tag_lower:
+            # Pass to standardizer directly
+            return standardize_roast_level(tag_lower)
+
+    # Check slug for roast level mentions
+    slug = woo_product.get("slug", "").lower()
+    if "roast" in slug:
+        return standardize_roast_level(slug)
+
+    # Check title for explicit roast mentions
+    title = woo_product.get("name", "").lower()
+    if "roast" in title:
+        return standardize_roast_level(title)
+
+    # At this point, let's check for specific keywords in any of these sources
+    sources = [" ".join(tags), slug, title]
+    for source in sources:
+        if any(keyword in source.lower() for keyword in ["light", "medium", "dark", "espresso", "filter"]):
+            return standardize_roast_level(source)
+
+    # Fallback to the regular attribute extraction method
+    return standardize_roast_level(
+        extract_attribute_from_woocommerce(woo_product, "roast_level", ["roast", "roast level", "roast-level"])
+    )
+
+
+# --- Enhanced processing method extraction ---
+def extract_processing_method_from_woocommerce(
+    woo_product: Dict[str, Any], tags: List[str], name: str, slug: str
+) -> str:
+    """Extract processing method from tags, slug, or name, using standardizer directly."""
+    # Check tags for processing method terms
+    for tag in tags:
+        tag_lower = tag.lower()
+        if any(term in tag_lower for term in ["process", "washed", "natural", "honey", "anaerobic", "ferment"]):
+            return standardize_processing_method(tag_lower)
+
+    # Check product slug and name
+    if any(term in slug.lower() for term in ["washed", "natural", "honey", "anaerobic"]):
+        return standardize_processing_method(slug)
+
+    if any(term in name.lower() for term in ["washed", "natural", "honey", "anaerobic"]):
+        return standardize_processing_method(name)
+
+    # Combine and check all sources for key processing terms
+    all_text = f"{' '.join(tags)} {slug} {name}".lower()
+    process_terms = ["washed", "natural", "honey", "pulped", "anaerobic", "monsooned", "wet-hulled", "carbonic"]
+    if any(term in all_text for term in process_terms):
+        return standardize_processing_method(all_text)
+
+    # Fall back to regular attribute extraction
+    return standardize_processing_method(
+        extract_attribute_from_woocommerce(woo_product, "processing_method", ["process", "processing", "processing-method"])
+    )
+
+
+def extract_attribute_from_woocommerce(woo_product: Dict[str, Any], field_name: str, possible_keys: List[str]) -> Optional[str]:
+    """
+    Extract attribute value from WooCommerce product attributes or options.
+    Similar to Shopify's extract_attribute function.
+
+    Args:
+        woo_product: Product data from WooCommerce API
+        field_name: Field name to extract
+        possible_keys: List of possible key names to match
+
+    Returns:
+        Attribute value if found, None otherwise
+    """
+    # Check attributes first
+    if "attributes" in woo_product and woo_product["attributes"]:
+        for attr in woo_product["attributes"]:
+            if not isinstance(attr, dict):
+                continue
+            attr_name = attr.get("name", "").lower()
+            if any(possible_key in attr_name for possible_key in possible_keys):
+                attr_value = attr.get("option", "")
+                if not attr_value and "options" in attr and attr["options"]:
+                    if isinstance(attr["options"], list) and len(attr["options"]) > 0:
+                        attr_value = attr["options"][0]
+                    elif isinstance(attr["options"], str):
+                        attr_value = attr["options"]
+                if attr_value:
+                    return attr_value
+
+    # Check tags for specific attributes, including key:value patterns
+    if woo_product.get("tags"):
+        tags = _process_tags(woo_product["tags"])
+        for tag in tags:
+            tag_lower = tag.lower()
+            # Check for key:value pattern
+            if ":" in tag_lower:
+                tag_key, tag_value = tag_lower.split(":", 1)
+                tag_key = tag_key.strip()
+                if any(possible_key == tag_key for possible_key in possible_keys):
+                    return tag_value.strip()
+
+            # Original tag check (if key is just part of the tag)
+            for key_search in possible_keys:
+                if key_search in tag_lower:
+                    # Attempt to extract value if tag is like "roast level light"
+                    parts = tag_lower.split(key_search)
+                    if len(parts) > 1 and parts[1].strip():
+                        # Clean up common separators if it's not a key:value pair
+                        value_part = parts[1].strip().replace("-", " ").replace(":", "").strip()
+                        if value_part:
+                            return value_part
+
+    # Check product type as fallback for some fields
+    product_type = woo_product.get("type", "").lower()
+
+    # Extract roast level from product type
+    if field_name == "roast_level":
+        roast_patterns = ["light", "medium", "dark", "espresso", "filter", "omniroast"]
+        for level in roast_patterns:
+            if level in product_type:
+                return level
+
+    # Try to extract from description for key attributes
+    description = woo_product.get("description", "").lower()
+
+    # Common patterns for attributes in descriptions
+    patterns = {
+        "roast_level": [
+            r"(light|medium|dark)(?:\s+roast)",
+            r"roast(?:ed)?\s+(?:to\s+)?(?:a\s+)?(light|medium|dark)",
+            r"(light|medium|dark)\s+roasted",
+        ],
+        "bean_type": [
+            r"(arabica|robusta|liberica)(?:\s+beans?)",
+            r"(?:100%\s+)?(arabica|robusta|liberica)",
+            r"(single\s+origin)",
+            r"(?:a\s+)?(blend)",
+        ],
+        "processing_method": [
+            r"(washed|natural|honey|pulped\s+natural|anaerobic)(?:\s+process)",
+            r"process(?:ed)?\s+(?:using\s+)?(?:the\s+)?(washed|natural|honey|pulped\s+natural|anaerobic)",
+        ],
+        "region_name": [r"(?:grown|cultivated|produced|harvested)\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)"],
+    }
+
+    if field_name in patterns:
+        for pattern in patterns[field_name]:
+            match = re.search(pattern, description)
+            if match:
+                return match.group(1)
+
+    return None
