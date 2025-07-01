@@ -17,6 +17,22 @@ Usage Examples:
 
     # Conservative settings for rate-limited sites
     python run_roaster.py --concurrency 2 --rate-limit 5 --rate-period 120
+
+    # Test a new roaster
+    python run_roaster.py --single --input "Ainmane,https://ainmane.com" --output test_roaster.json
+
+    # Batch process with custom performance settings
+    python run_roaster.py --input roasters.csv --output enriched_roasters.json --limit 5 --concurrency 3 --rate-limit 8 --rate-period 60 --max-retries 3
+
+Available Arguments:
+    --input: Input CSV file (default: ./data/input/roasters_input.csv)
+    --output: Output JSON file (default: ./data/output/enriched_roasters.json)
+    --limit: Limit number of roasters to scrape
+    --single: Process a single roaster (input should be name,url)
+    --concurrency: Max concurrent tasks (default: 5)
+    --rate-limit: Max requests per rate period (default: 10)
+    --rate-period: Rate limiting window in seconds (default: 60.0)
+    --max-retries: Max retry attempts per roaster (default: 2)
 """
 
 import argparse

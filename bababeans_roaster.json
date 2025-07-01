@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Babas Beans Coffee",
+    "website_url": "http://babasbeanscoffee.com",
+    "slug": "babas-beans-coffee",
+    "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "babasbeanscoffee.com",
+    "platform": "woocommerce",
+    "index": 0,
+    "error": true,
+    "tags": [
+      "specialty",
+      "organic",
+      "single-origin",
+      "local",
+      "arabica",
+      "robusta",
+      "subscription",
+      "woocommerce"
+    ],
+    "content": "litellm.BadRequestError: LLM Provider NOT provided. Pass in the LLM provider you are trying to call. You passed model=deepseek-ai/deepseek-chat\n Pass model as E.g. For 'Huggingface' inference endpoints pass in `completion(model='huggingface/starcoder',..)` Learn more: https://docs.litellm.ai/docs/providers",
+    "has_subscription": true,
+    "has_physical_store": true,
+    "description": "Babas Beans Coffee is a specialty coffee roaster dedicated to sourcing and roasting high-quality beans to deliver rich, flavorful coffee experiences. They focus on small-batch roasting to ensure freshness and unique profiles."
+  }
+]

@@ -15,6 +15,45 @@ Usage Examples:
 
     # Validate existing products
     python run_product_scraper.py validate --input products.json
+
+    # Test a new roaster with custom settings
+    python run_product_scraper.py batch --roaster-link "https://ainmane.com" --output ainmane_products.json --force-refresh --no-enrichment
+
+    # Batch scrape with platform filtering
+    python run_product_scraper.py batch --roasters roasters.json --platform shopify --limit 3 --export-format csv
+
+    # Single product with enrichment disabled
+    python run_product_scraper.py url --url "https://example.com/product" --roaster-name "Test Roaster" --no-enrichment --no-confidence
+
+    # Validate and fix existing products
+    python run_product_scraper.py validate --input products.json --output fixed_products.json
+
+Available Commands and Arguments:
+
+BATCH COMMAND (python run_product_scraper.py batch):
+    --roasters: JSON file containing roaster data
+    --roaster-link: Single roaster URL to scrape
+    --output: Output file (default: ./output/products.json)
+    --export-format: Export format: json or csv (default: json)
+    --platform: Only scrape specific platform (shopify, woocommerce, static)
+    --roaster-id: Only scrape specific roaster by ID or slug
+    --limit: Limit number of roasters to scrape
+    --force-refresh: Force refresh, ignore cache
+    --no-enrichment: Disable LLM enrichment
+    --no-confidence: Disable confidence tracking
+    --analyze: Generate field coverage analysis report
+
+URL COMMAND (python run_product_scraper.py url):
+    --url: Product URL to scrape (required)
+    --output: Output JSON file (default: ./output/single_product.json)
+    --roaster-name: Roaster name (default: Unknown)
+    --roaster-id: Roaster ID (default: unknown)
+    --no-enrichment: Disable LLM enrichment
+    --no-confidence: Disable confidence tracking
+
+VALIDATE COMMAND (python run_product_scraper.py validate):
+    --input: Input JSON file containing products (required)
+    --output: Output JSON file (defaults to overwriting input)
 """
 
 import argparse
@@ -49,6 +88,7 @@ async def main():
     batch_parser.add_argument("--no-enrichment", action="store_true", help="Disable LLM enrichment")
     batch_parser.add_argument("--no-confidence", action="store_true", help="Disable confidence tracking")
     batch_parser.add_argument("--analyze", action="store_true", help="Generate field coverage analysis report")
+    batch_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
     # Add roaster link argument
     batch_parser.add_argument("--roaster-link", help="Roaster link to scrape")
@@ -61,6 +101,7 @@ async def main():
     url_parser.add_argument("--roaster-id", default="unknown", help="Roaster ID (for context)")
     url_parser.add_argument("--no-enrichment", action="store_true", help="Disable LLM enrichment")
     url_parser.add_argument("--no-confidence", action="store_true", help="Disable confidence tracking")
+    url_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
     # Add validation command for existing products
     validate_parser = subparsers.add_parser("validate", help="Validate and fix existing products")
@@ -68,6 +109,20 @@ async def main():
     validate_parser.add_argument("--output", help="Output JSON file (defaults to overwriting input)")
 
     args = parser.parse_args()
+
+    # Enable debug logging if requested
+    if args.debug:
+        # Remove default handler and add debug handler
+        logger.remove()
+        logger.add(sys.stderr, level="DEBUG", format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <level>{message}</level>")
+        
+        # Also set the standard logging level to DEBUG for imported modules
+        import logging
+        logging.getLogger().setLevel(logging.DEBUG)
+        for name in logging.root.manager.loggerDict:
+            logging.getLogger(name).setLevel(logging.DEBUG)
+        
+        logger.info("Debug logging enabled")
 
     if args.command == "batch":
         if args.roaster_link:

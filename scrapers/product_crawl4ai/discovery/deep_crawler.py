@@ -205,9 +205,14 @@ async def discover_products_via_crawl4ai(
             # Add source URL
             product["direct_buy_url"] = url
 
+            # Debug: Verify URL was set correctly
+            if not product.get("direct_buy_url"):
+                logger.error(f"Failed to set direct_buy_url for product: {product.get('name', 'Unknown')}")
+                continue
+
             # Add to products list
             products.append(product)
-            logger.debug(f"Extracted product: {product.get('name', 'Unknown')}")
+            logger.debug(f"Extracted product: {product.get('name', 'Unknown')} with URL: {product.get('direct_buy_url')}")
 
         except Exception as e:
             logger.error(f"Error extracting product data from {url}: {e}")

@@ -365,7 +365,7 @@ class RoasterCrawler:
 
         # Define the LLM extraction strategy
         llm_strategy = LLMExtractionStrategy(
-            llm_config=LLMConfig(provider="deepseek-ai/deepseek-chat", api_token=app_config.llm.deepseek_api_key),
+            llm_config=LLMConfig(provider="deepseek", api_token=app_config.llm.deepseek_api_key),
             schema=ROASTER_LLM_SCHEMA,
             extraction_type="schema",
             instruction=ROASTER_LLM_INSTRUCTIONS,

@@ -6,8 +6,9 @@ import json
 import logging
 import re
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse, quote
 
-from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig, LLMConfig
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig, LLMConfig as Crawl4AILLMConfig
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
 from common.utils import slugify
@@ -41,6 +42,64 @@ COFFEE_COMPLETE_SCHEMA = {
 }
 
 
+def _validate_and_normalize_url(url: str) -> Optional[str]:
+    """
+    Validate and normalize URL for Crawl4AI compatibility.
+    
+    Args:
+        url: URL to validate and normalize
+        
+    Returns:
+        Normalized URL if valid, None if invalid
+    """
+    if not url or not isinstance(url, str):
+        return None
+    
+    url = url.strip()
+    if not url:
+        return None
+    
+    try:
+        # Parse URL to check if it's valid
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            # Try to add https if no scheme
+            if not url.startswith(('http://', 'https://')):
+                url = f"https://{url}"
+                parsed = urlparse(url)
+                if not parsed.netloc:
+                    return None
+        
+        # Normalize URL by encoding special characters in path and query
+        if parsed.path:
+            # Encode path components that might cause issues
+            path_parts = parsed.path.split('/')
+            encoded_parts = []
+            for part in path_parts:
+                if part:
+                    # Encode special characters but preserve common ones
+                    encoded_part = quote(part, safe='')
+                    encoded_parts.append(encoded_part)
+                else:
+                    encoded_parts.append(part)
+            normalized_path = '/'.join(encoded_parts)
+        else:
+            normalized_path = parsed.path
+        
+        # Reconstruct URL
+        normalized_url = f"{parsed.scheme}://{parsed.netloc}{normalized_path}"
+        if parsed.query:
+            normalized_url += f"?{parsed.query}"
+        if parsed.fragment:
+            normalized_url += f"#{parsed.fragment}"
+        
+        return normalized_url
+        
+    except Exception as e:
+        logger.warning(f"Failed to normalize URL {url}: {e}")
+        return None
+
+
 def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
     """Process and normalize extracted fields from LLM (shared logic)"""
 
@@ -60,11 +119,15 @@ def _process_extracted_fields(product: Dict, extracted: Dict) -> None:
         "acidity",
         "body",
         "sweetness",
-        "aroma",
     ]
     for field in simple_fields:
         if field in extracted and extracted[field] and not product.get(field):
             product[field] = extracted[field]
+    
+    # Handle aroma with standardization
+    if "aroma" in extracted and extracted["aroma"] and not product.get("aroma"):
+        from ..api_extractors.shopify import standardize_aroma_intensity
+        product["aroma"] = standardize_aroma_intensity(extracted["aroma"])
 
     # Handle boolean fields (only if not already present)
     if (
@@ -147,6 +210,13 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
         logger.warning(f"Cannot enrich product without URL: {product.get('name', 'Unknown')}")
         product["deepseek_enriched"] = False
         return product
+    
+    # Validate and normalize URL
+    normalized_url = _validate_and_normalize_url(product["direct_buy_url"])
+    if not normalized_url:
+        logger.warning(f"Invalid URL for enrichment: {product.get('direct_buy_url', 'None')} - {product.get('name', 'Unknown')}")
+        product["deepseek_enriched"] = False
+        return product
 
     # Check which fields are missing (including advanced fields)
     all_fields = [
@@ -217,7 +287,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=product["direct_buy_url"], config=config_simple)
+            result = await crawler.arun(url=normalized_url, config=config_simple)
 
             if result.success and result.extracted_content:
                 try:
@@ -234,7 +304,13 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
                 product["deepseek_enriched"] = False
 
     except Exception as e:
-        logger.error(f"Error during product enrichment: {e}")
+        error_msg = str(e)
+        if "Invalid URL" in error_msg:
+            logger.error(f"Invalid URL error during enrichment for {product.get('name', 'Unknown')}: {error_msg}")
+            logger.error(f"Original URL: {product.get('direct_buy_url', 'None')}")
+            logger.error(f"Normalized URL: {normalized_url}")
+        else:
+            logger.error(f"Error during product enrichment: {e}")
         product["deepseek_enriched"] = False
 
     return product
@@ -246,6 +322,12 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
     IMPROVED VERSION - focuses on core product data only.
     """
     logger.info(f"Extracting product data from URL: {url}")
+
+    # Validate and normalize URL
+    normalized_url = _validate_and_normalize_url(url)
+    if not normalized_url:
+        logger.error(f"Invalid URL for extraction: {url}")
+        return None
 
     try:
         # Simple extraction strategy
@@ -282,16 +364,28 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=url, config=config_simple)
+            result = await crawler.arun(url=normalized_url, config=config_simple)
+
+            # Debug logging
+            logger.debug(f"Extraction result for {url}:")
+            logger.debug(f"  - Success: {result.success}")
+            logger.debug(f"  - Has extracted_content: {bool(result.extracted_content)}")
+            logger.debug(f"  - Extracted content length: {len(result.extracted_content) if result.extracted_content else 0}")
+            
+            if result.extracted_content:
+                logger.debug(f"  - Extracted content preview: {result.extracted_content[:200]}...")
 
             if result.success and result.extracted_content:
                 try:
                     extracted = json.loads(result.extracted_content)
+                    logger.debug(f"  - Parsed JSON successfully: {list(extracted.keys())}")
 
                     # Get product name (required)
                     product_name = extracted.get("name")
                     if not product_name:
                         logger.warning(f"Could not extract product name from URL {url}")
+                        logger.debug(f"  - Available fields: {list(extracted.keys())}")
+                        logger.debug(f"  - Full extracted data: {extracted}")
                         return None
 
                     # Create base product
@@ -300,7 +394,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
                         "slug": slugify(product_name),
                         "roaster_id": roaster_id,
                         "description": extracted.get("description", ""),
-                        "direct_buy_url": url,
+                        "direct_buy_url": url,  # Use original URL for storage
                         "is_available": True,
                         "prices": [],
                         "source": "crawl4ai_extraction",
@@ -320,25 +414,44 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
 
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse extracted content: {e}")
+                    logger.debug(f"  - Raw extracted content: {result.extracted_content}")
                     return None
 
-            logger.warning(f"Failed to extract product from {url}")
+            # More detailed failure logging
+            if not result.success:
+                logger.warning(f"Failed to extract product from {url} - crawler failed")
+                logger.debug(f"  - Error details: {getattr(result, 'error', 'No error details')}")
+            elif not result.extracted_content:
+                logger.warning(f"Failed to extract product from {url} - no extracted content")
+                logger.debug(f"  - HTML length: {len(result.html) if result.html else 0}")
+                logger.debug(f"  - Markdown length: {len(result.markdown) if result.markdown else 0}")
+                # Log a snippet of the HTML to see what's available
+                if result.html:
+                    logger.debug(f"  - HTML preview: {result.html[:500]}...")
             return None
 
     except Exception as e:
-        logger.error(f"Error during product extraction: {e}")
+        error_msg = str(e)
+        if "Invalid URL" in error_msg:
+            logger.error(f"Invalid URL error during extraction: {error_msg}")
+            logger.error(f"Original URL: {url}")
+            logger.error(f"Normalized URL: {normalized_url}")
+        else:
+            logger.error(f"Error during product extraction: {e}")
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Full error details: {str(e)}")
         return None
 
 
-def get_llm_config() -> LLMConfig:
-    """Get LLM configuration - prefer DeepSeek, fallback to OpenAI"""
-    deepseek_key = config.llm.deepseek_api_key
-    if deepseek_key:
-        return LLMConfig(provider="deepseek/deepseek-chat", api_token=deepseek_key)
-
+def get_llm_config() -> Crawl4AILLMConfig:
+    """Get LLM configuration - prefer OpenAI GPT-4o Mini, fallback to DeepSeek"""
     openai_key = config.llm.openai_api_key
     if openai_key:
-        return LLMConfig(provider="openai/gpt-4o-mini", api_token=openai_key)
+        return Crawl4AILLMConfig(provider="openai/gpt-4o-mini", api_token=openai_key)
+
+    deepseek_key = config.llm.deepseek_api_key
+    if deepseek_key:
+        return Crawl4AILLMConfig(provider="deepseek", api_token=deepseek_key)
 
     logger.warning("No LLM API keys found. Extraction will fail.")
-    return LLMConfig(provider="openai/gpt-4o-mini", api_token="")
+    return Crawl4AILLMConfig(provider="openai/gpt-4o-mini", api_token="openai_key")

@@ -127,6 +127,12 @@ class ProductScraper:
             # 4b. Enrich product with missing data using LLM (if enabled)
             if use_enrichment:
                 logger.info(f"Enriching product with LLM: {product_dict.get('name', 'Unknown')}")
+                # Debug: Check URL before enrichment
+                if not product_dict.get("direct_buy_url"):
+                    logger.warning(f"Product {product_dict.get('name', 'Unknown')} has no direct_buy_url before enrichment")
+                else:
+                    logger.debug(f"Product {product_dict.get('name', 'Unknown')} has URL: {product_dict.get('direct_buy_url')}")
+                
                 enriched_product_data = await enrich_coffee_product(product_dict, roaster_name)
             else:
                 logger.info(

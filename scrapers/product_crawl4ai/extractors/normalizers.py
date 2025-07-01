@@ -350,11 +350,9 @@ def normalize_coffee_data(coffee: Dict[str, Any]) -> Dict[str, Any]:
     if "name" in normalized and "slug" not in normalized:
         normalized["slug"] = slugify(normalized["name"])
 
-    # Normalize prices
-    price_fields = ["price_100g", "price_250g", "price_500g", "price_1kg"]
-    for field in price_fields:
-        if field in coffee:
-            normalized[field] = normalize_price(coffee[field])
+    # Normalize prices - only price_250g is in Coffee model
+    if "price_250g" in coffee:
+        normalized["price_250g"] = normalize_price(coffee["price_250g"])
 
     # Normalize image URL
     if "image_url" in coffee:
@@ -364,14 +362,14 @@ def normalize_coffee_data(coffee: Dict[str, Any]) -> Dict[str, Any]:
     if "flavor_profiles" in coffee:
         normalized["flavor_profiles"] = normalize_flavor_profiles(coffee["flavor_profiles"])
 
-    # Normalize boolean fields
-    boolean_fields = ["is_available", "is_seasonal", "is_single_origin", "is_blend", "is_featured"]
+    # Normalize boolean fields - match Coffee model fields
+    boolean_fields = ["is_available", "is_seasonal", "is_single_origin", "is_featured", "deepseek_enriched", "with_milk_suitable"]
     for field in boolean_fields:
         if field in coffee:
             normalized[field] = normalize_boolean_field(coffee[field])
 
-    # Normalize date fields
-    date_fields = ["created_at", "updated_at", "last_scraped_at"]
+    # Normalize date fields - only created_at and updated_at are in Coffee model
+    date_fields = ["created_at", "updated_at"]
     for field in date_fields:
         if field in coffee:
             normalized[field] = normalize_date(coffee[field])
@@ -379,9 +377,6 @@ def normalize_coffee_data(coffee: Dict[str, Any]) -> Dict[str, Any]:
     # Set default values for required fields if missing
     if "is_available" not in normalized:
         normalized["is_available"] = True
-
-    if "last_scraped_at" not in normalized:
-        normalized["last_scraped_at"] = datetime.now().isoformat()
 
     return normalized
 
@@ -399,19 +394,18 @@ def standardize_coffee_model(coffee: Dict[str, Any]) -> Dict[str, Any]:
     # Normalize all fields first
     normalized = normalize_coffee_data(coffee)
 
-    # Define standard model fields
+    # Define standard model fields - match Coffee model exactly
     standard_fields = {
-        # Core fields
+        # Core fields from Coffee model
         "name": str,
         "slug": str,
-        "roaster_id": str,
-        "roaster_slug": str,  # Temporary field for linking
+        "roaster_id": str,  # Keep this as roaster_id, not roaster_slug
         "description": str,
         "roast_level": str,
         "bean_type": str,
         "processing_method": str,
         "region_id": str,
-        "region_name": str,  # Temporary field for linking
+        "region_name": str,
         "image_url": str,
         "direct_buy_url": str,
         # Boolean flags
@@ -419,23 +413,24 @@ def standardize_coffee_model(coffee: Dict[str, Any]) -> Dict[str, Any]:
         "is_single_origin": bool,
         "is_available": bool,
         "is_featured": bool,
-        "is_blend": bool,
+        "deepseek_enriched": bool,
         # Price fields
-        "price_100g": float,
-        "price_200g": float,
-        "price_250g": float,
-        "price_500g": float,
-        "price_750g": float,
-        "price_1kg": float,
-        "price_2kg": float,
-        # Related data
-        "flavor_profiles": list,
+        "price_250g": float,  # Only this price field is in Coffee model
+        # Additional fields from Coffee model
+        "acidity": str,
+        "body": str,
+        "sweetness": str,
+        "aroma": str,
+        "with_milk_suitable": bool,
+        "varietals": list,
+        "altitude_meters": int,
+        # Related data (not stored directly in DB)
+        "prices": list,
         "brew_methods": list,
+        "flavor_profiles": list,
+        "external_links": list,
         # Metadata
         "tags": list,
-        "confidence_scores": dict,
-        "last_scraped_at": str,
-        "scrape_status": str,
     }
 
     # Create standardized dict with correct types

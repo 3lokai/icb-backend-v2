@@ -37,10 +37,10 @@
     "deepseek_enriched": false,
     "price_250g": 580.0,
     "acidity": "low",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "body": "syrupy",
+    "sweetness": "medium",
+    "aroma": "dried fruits",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -65,8 +65,8 @@
       "french press",
       "aeropress",
       "moka pot",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
     "flavor_profiles": [
@@ -107,10 +107,10 @@
     "deepseek_enriched": false,
     "price_250g": 700.0,
     "acidity": "low",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "body": "heavy",
+    "sweetness": "medium",
+    "aroma": "brown spices",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -135,8 +135,8 @@
       "french press",
       "aeropress",
       "moka pot",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
     "flavor_profiles": [
@@ -160,7 +160,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/MS-Estate-Front.jpg?v=1734940696",
     "direct_buy_url": "https://bluetokaicoffee.com/products/m-s-estate",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -201,10 +201,10 @@
     "deepseek_enriched": false,
     "price_250g": 750.0,
     "acidity": "medium",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "body": "light",
+    "sweetness": "medium",
+    "aroma": "dried fruits",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -299,9 +299,9 @@
     "price_250g": 540.0,
     "acidity": "medium high",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "sweetness": "high",
+    "aroma": "fruity",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -324,8 +324,8 @@
     "brew_methods": [
       "pour over",
       "aeropress",
-      "drip",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
@@ -395,9 +395,9 @@
     "price_250g": 540.0,
     "acidity": "low",
     "body": null,
-    "sweetness": null,
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -419,17 +419,15 @@
     ],
     "brew_methods": [
       "cold brew",
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
       "chocolate",
-      "toffee",
-      "nut",
-      "sweet"
+      "toffee"
     ],
     "external_links": []
   },
@@ -477,10 +475,10 @@
     "deepseek_enriched": false,
     "price_250g": 500.0,
     "acidity": "low",
-    "body": null,
-    "sweetness": null,
+    "body": "heavy",
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -501,16 +499,14 @@
       }
     ],
     "brew_methods": [
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
-      "chocolate",
-      "pepper",
-      "cardamom"
+      "chocolate"
     ],
     "external_links": []
   },
@@ -576,10 +572,10 @@
     "deepseek_enriched": false,
     "price_250g": 540.0,
     "acidity": "medium",
-    "body": null,
-    "sweetness": null,
+    "body": "syrupy",
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -610,8 +606,6 @@
     ],
     "flavor_profiles": [
       "chocolate",
-      "prune",
-      "sweet",
       "orange"
     ],
     "external_links": []
@@ -681,9 +675,9 @@
     "price_250g": 540.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -711,7 +705,9 @@
       "french press",
       "turkish"
     ],
-    "flavor_profiles": [],
+    "flavor_profiles": [
+      "roasted"
+    ],
     "external_links": []
   },
   {
@@ -783,9 +779,9 @@
     "price_250g": 500.0,
     "acidity": "low",
     "body": null,
-    "sweetness": null,
+    "sweetness": "low",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -811,11 +807,15 @@
       "french press",
       "moka pot",
       "south indian filter",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
-    "flavor_profiles": [],
+    "flavor_profiles": [
+      "chocolate",
+      "earthy",
+      "roasted"
+    ],
     "external_links": []
   },
   {
@@ -892,9 +892,9 @@
     "price_250g": 540.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "sweetness": "medium",
+    "aroma": "fruity",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -916,15 +916,13 @@
     ],
     "brew_methods": [
       "espresso",
-      "drip",
       "pour over",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
-      "citrus",
-      "fig",
-      "sweet"
+      "citrus"
     ],
     "external_links": []
   },
@@ -943,7 +941,7 @@
     "region_name": null,
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/Dhak-Blend-Front.jpg?v=1734947063",
     "direct_buy_url": "https://bluetokaicoffee.com/products/dhak-blend",
-    "is_seasonal": false,
+    "is_seasonal": true,
     "is_single_origin": false,
     "is_available": true,
     "is_featured": false,
@@ -990,10 +988,10 @@
     "deepseek_enriched": false,
     "price_250g": 540.0,
     "acidity": "low",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "body": "full",
+    "sweetness": "medium",
+    "aroma": "fruity",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1017,8 +1015,8 @@
       "espresso",
       "french press",
       "moka pot",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
     "flavor_profiles": [
@@ -1102,10 +1100,10 @@
     "deepseek_enriched": false,
     "price_250g": 580.0,
     "acidity": "medium",
-    "body": null,
-    "sweetness": null,
+    "body": "medium",
+    "sweetness": "high",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1127,15 +1125,13 @@
     ],
     "brew_methods": [
       "espresso",
-      "drip",
       "pour over",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
-      "brown sugar",
-      "almond",
-      "raisin"
+      "almond"
     ],
     "external_links": []
   },
@@ -1202,8 +1198,8 @@
     "price_250g": 700.0,
     "acidity": "low",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
+    "sweetness": "medium",
+    "aroma": "nutty",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -1228,14 +1224,13 @@
       "espresso",
       "french press",
       "moka pot",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
     "flavor_profiles": [
       "cocoa",
-      "chocolate",
-      "biscuit"
+      "chocolate"
     ],
     "external_links": []
   },
@@ -1275,10 +1270,10 @@
     "deepseek_enriched": false,
     "price_250g": 700.0,
     "acidity": "medium",
-    "body": null,
-    "sweetness": null,
+    "body": "syrupy",
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1303,12 +1298,11 @@
       "french press",
       "aeropress",
       "moka pot",
-      "drip",
       "pour over",
+      "drip",
       "turkish"
     ],
     "flavor_profiles": [
-      "grapefruit",
       "toffee",
       "almond",
       "spice"
@@ -1355,10 +1349,10 @@
     "deepseek_enriched": false,
     "price_250g": 795.0,
     "acidity": "medium high",
-    "body": null,
-    "sweetness": null,
+    "body": "medium",
+    "sweetness": "high",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1381,14 +1375,13 @@
     "brew_methods": [
       "pour over",
       "aeropress",
-      "drip",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
-      "peach",
-      "sweet"
+      "peach"
     ],
     "external_links": []
   },
@@ -1425,19 +1418,19 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 540.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
@@ -1501,10 +1494,10 @@
     "deepseek_enriched": false,
     "price_250g": 700.0,
     "acidity": "high",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "body": "syrupy",
+    "sweetness": "high",
+    "aroma": "brown sugar",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1527,19 +1520,15 @@
     "brew_methods": [
       "pour over",
       "aeropress",
-      "drip",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
     "flavor_profiles": [
       "lime",
-      "sweet",
       "apricot",
-      "black tea",
-      "brown sugar",
-      "apricot",
-      "black tea"
+      "apricot"
     ],
     "external_links": []
   },
@@ -1558,7 +1547,7 @@
     "region_name": null,
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/Dhak-blend-coffee-capsules-pack-10.jpg?v=1736747343",
     "direct_buy_url": "https://bluetokaicoffee.com/products/dhak-blend-aluminium-coffee-capsules",
-    "is_seasonal": false,
+    "is_seasonal": true,
     "is_single_origin": false,
     "is_available": true,
     "is_featured": false,
@@ -1572,12 +1561,12 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 450.0,
     "acidity": "medium",
-    "body": null,
-    "sweetness": null,
+    "body": "full",
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -1605,7 +1594,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/Untitled-3-01.jpg?v=1750077372",
     "direct_buy_url": "https://bluetokaicoffee.com/products/riverdale-estate-fruit-punch",
     "is_seasonal": true,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
     "tags": [
@@ -1619,11 +1608,11 @@
     ],
     "deepseek_enriched": false,
     "price_250g": 1093.75,
-    "acidity": null,
+    "acidity": "bright",
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "rich tropical fruits",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1641,7 +1630,6 @@
       "peach",
       "berry",
       "strawberry",
-      "grape",
       "tropical"
     ],
     "external_links": []
@@ -1680,12 +1668,12 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
+    "price_250g": 500.0,
+    "acidity": "low",
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "nutty",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -1693,8 +1681,7 @@
       "cold brew"
     ],
     "flavor_profiles": [
-      "chocolate",
-      "nut"
+      "chocolate"
     ],
     "external_links": []
   },
@@ -1732,11 +1719,11 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 500.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
+    "aroma": "fruity",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -1805,9 +1792,9 @@
     "price_250g": 540.0,
     "acidity": "high",
     "body": null,
-    "sweetness": null,
+    "sweetness": "high",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1828,9 +1815,9 @@
       }
     ],
     "brew_methods": [
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
@@ -1856,7 +1843,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/02_Kerehaklu-Estate-Peaberry-Natural__Washed_Natural.jpg?v=1739270298",
     "direct_buy_url": "https://bluetokaicoffee.com/products/kerehaklu-estate-peaberries",
     "is_seasonal": true,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
     "tags": [
@@ -1876,10 +1863,10 @@
     ],
     "deepseek_enriched": false,
     "price_250g": 800.0,
-    "acidity": null,
+    "acidity": "bright",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
+    "sweetness": "high",
+    "aroma": "brown sugar  citrus",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -1896,8 +1883,6 @@
     ],
     "flavor_profiles": [
       "toffee",
-      "grape",
-      "brown sugar",
       "citrus",
       "toffee"
     ],
@@ -1939,9 +1924,9 @@
     "price_250g": 750.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "sweetness": "medium",
+    "aroma": "fruity",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -1996,12 +1981,12 @@
       "estate:Attikan"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 450.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "sweetness": "medium",
+    "aroma": "fruity",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -2009,7 +1994,7 @@
       "espresso"
     ],
     "flavor_profiles": [
-      "nut"
+      "fruity"
     ],
     "external_links": []
   },
@@ -2107,7 +2092,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/1_23.jpg?v=1738648042",
     "direct_buy_url": "https://bluetokaicoffee.com/products/origin-unhurried-yercaud-pack",
     "is_seasonal": true,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
     "tags": [
@@ -2133,8 +2118,8 @@
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "fruity",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2146,9 +2131,7 @@
     ],
     "brew_methods": [],
     "flavor_profiles": [
-      "orange",
-      "passion fruit",
-      "pomegranate"
+      "orange"
     ],
     "external_links": []
   },
@@ -2207,7 +2190,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/01_RiverdaleEstate-WhiteRose__Front.jpg?v=1737957453",
     "direct_buy_url": "https://bluetokaicoffee.com/products/riverdale-estate-white-rose",
     "is_seasonal": true,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
     "tags": [
@@ -2225,9 +2208,9 @@
     "price_250g": 800.0,
     "acidity": "medium high",
     "body": null,
-    "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "sweetness": "high",
+    "aroma": "floral",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2242,11 +2225,7 @@
       "aeropress"
     ],
     "flavor_profiles": [
-      "orange",
-      "passion fruit",
-      "pomegranate",
-      "creamy",
-      "sweet"
+      "orange"
     ],
     "external_links": []
   },
@@ -2282,9 +2261,9 @@
     "deepseek_enriched": false,
     "price_250g": 700.0,
     "acidity": "medium high",
-    "body": null,
-    "sweetness": null,
-    "aroma": null,
+    "body": "medium",
+    "sweetness": "high",
+    "aroma": "prunes  black raisin",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -2302,8 +2281,6 @@
     "flavor_profiles": [
       "plum",
       "raspberry",
-      "prune",
-      "raisin",
       "raspberry"
     ],
     "external_links": []
@@ -2338,9 +2315,9 @@
     "price_250g": 740.0,
     "acidity": "medium high",
     "body": null,
-    "sweetness": null,
+    "sweetness": "high",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2390,16 +2367,16 @@
     "price_250g": null,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
+    "sweetness": "medium",
     "aroma": null,
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "french press",
       "turkish"
     ],
@@ -2433,10 +2410,10 @@
     "deepseek_enriched": false,
     "price_250g": 1010.0,
     "acidity": null,
-    "body": null,
+    "body": "full",
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2474,7 +2451,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/French-Roast-_-Channi__Front.jpg?v=1732780789",
     "direct_buy_url": "https://bluetokaicoffee.com/products/french-roast-250g-channi",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -2485,10 +2462,10 @@
     "deepseek_enriched": false,
     "price_250g": 970.0,
     "acidity": null,
-    "body": null,
+    "body": "full",
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2504,8 +2481,7 @@
       "french press"
     ],
     "flavor_profiles": [
-      "cocoa",
-      "creamy"
+      "cocoa"
     ],
     "external_links": []
   },
@@ -2539,7 +2515,7 @@
     "body": null,
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2557,8 +2533,7 @@
     ],
     "flavor_profiles": [
       "hazelnut",
-      "honey",
-      "grape"
+      "honey"
     ],
     "external_links": []
   },
@@ -2578,7 +2553,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/Vienna-Roast-_-Channi__Front.jpg?v=1732780372",
     "direct_buy_url": "https://bluetokaicoffee.com/products/vienna-roast-250g-channi",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
     "tags": [
@@ -2592,7 +2567,7 @@
     "body": null,
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2610,8 +2585,7 @@
       "south indian filter"
     ],
     "flavor_profiles": [
-      "cocoa",
-      "sweet"
+      "cocoa"
     ],
     "external_links": []
   },
@@ -2646,8 +2620,8 @@
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "nutty",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [
@@ -2666,9 +2640,6 @@
     "flavor_profiles": [
       "almond",
       "chocolate",
-      "fig",
-      "sweet",
-      "nut",
       "nutty"
     ],
     "external_links": []
@@ -2688,7 +2659,7 @@
     "region_name": null,
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/Nano_Gesha_01.jpg?v=1734402068",
     "direct_buy_url": "https://bluetokaicoffee.com/products/riverdale-estate-gesha-natural",
-    "is_seasonal": true,
+    "is_seasonal": false,
     "is_single_origin": true,
     "is_available": false,
     "is_featured": false,
@@ -2704,7 +2675,7 @@
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
+    "aroma": "jasmine  oranges",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -2719,8 +2690,7 @@
     "flavor_profiles": [
       "jasmine",
       "orange",
-      "floral",
-      "pomegranate"
+      "floral"
     ],
     "external_links": []
   },
@@ -2754,12 +2724,12 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 450.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -2798,12 +2768,12 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 450.0,
     "acidity": "medium",
     "body": null,
-    "sweetness": null,
+    "sweetness": "medium",
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -2851,11 +2821,11 @@
       "estate:Seethargundu"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
-    "body": null,
+    "price_250g": 250.0,
+    "acidity": "crisp",
+    "body": "syrupy",
     "sweetness": null,
-    "aroma": null,
+    "aroma": "fruity",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -2882,7 +2852,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/MonsoonMalabaar__Front_1.jpg?v=1705644772",
     "direct_buy_url": "https://bluetokaicoffee.com/products/monsoon-malabar-easy-pour-coffee-sachets",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -2902,11 +2872,11 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 250.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
+    "aroma": "nutty",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
@@ -2933,7 +2903,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/1SamplerPack__Front_9a37657a-2677-4da5-b699-25a4bc0430f3.jpg?v=1708518087",
     "direct_buy_url": "https://bluetokaicoffee.com/products/strong-black-coffee-brewer",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -2943,7 +2913,7 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 540.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
@@ -2954,8 +2924,8 @@
     "prices": [],
     "brew_methods": [
       "espresso",
-      "drip",
       "pour over",
+      "drip",
       "turkish",
       "french press"
     ],
@@ -2978,7 +2948,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/1SamplerPack__Front_cdc5e7ef-e832-4640-96b3-62d21c87252c.jpg?v=1746773715",
     "direct_buy_url": "https://bluetokaicoffee.com/products/milky-coffee-brewer",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -2987,19 +2957,19 @@
       "TAX_5"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 540.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [
-      "drip",
       "pour over",
       "espresso",
+      "drip",
       "turkish",
       "french press"
     ],
@@ -3022,7 +2992,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/MixedBag__Front_c9b610f1-ce4a-4b53-8b30-f6ca758eb6bb.jpg?v=1717566490",
     "direct_buy_url": "https://bluetokaicoffee.com/products/mixed-light-to-dark-roasts",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -3043,18 +3013,17 @@
       "estate:fruity medium roast and Attikan"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
+    "price_250g": 250.0,
+    "acidity": "crisp",
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "nutty",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [],
     "flavor_profiles": [
-      "sweet",
       "nutty"
     ],
     "external_links": []
@@ -3075,7 +3044,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/ViennaRoast__Front_1_a175faba-8e5f-40b8-aaa1-0efc3a525321.jpg?v=1717565466",
     "direct_buy_url": "https://bluetokaicoffee.com/products/vienna-dark-roast-easy-pour-coffee-sachets",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -3094,12 +3063,12 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
-    "body": null,
+    "price_250g": 250.0,
+    "acidity": "low",
+    "body": "full",
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -3135,7 +3104,7 @@
       "TAX_18"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 380.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
@@ -3168,7 +3137,7 @@
     "image_url": "https://cdn.shopify.com/s/files/1/0738/1409/files/FrenchRoast__Front_1.jpg?v=1705644248",
     "direct_buy_url": "https://bluetokaicoffee.com/products/french-roast-easy-pour-coffee-sachets",
     "is_seasonal": false,
-    "is_single_origin": false,
+    "is_single_origin": true,
     "is_available": true,
     "is_featured": false,
     "tags": [
@@ -3187,12 +3156,12 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 250.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
     "aroma": null,
-    "with_milk_suitable": null,
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -3245,18 +3214,17 @@
       "estate:Click here to read more about Kerehaklu"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
+    "price_250g": 250.0,
+    "acidity": "low",
     "body": null,
     "sweetness": null,
-    "aroma": null,
+    "aroma": "nutty",
     "with_milk_suitable": null,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [],
     "flavor_profiles": [
-      "sweet",
       "nutty"
     ],
     "external_links": []
@@ -3295,19 +3263,22 @@
       "TRAVELNOW"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 380.0,
     "acidity": null,
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "fruity",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [
       "cold brew"
     ],
-    "flavor_profiles": [],
+    "flavor_profiles": [
+      "roasted",
+      "fruity"
+    ],
     "external_links": []
   },
   {
@@ -3347,12 +3318,12 @@
       "estate:Thogarihunkal"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
+    "price_250g": 250.0,
     "acidity": null,
-    "body": null,
+    "body": "medium",
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "fruity",
+    "with_milk_suitable": false,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
@@ -3361,7 +3332,6 @@
       "apricot",
       "blueberry",
       "honey",
-      "cashew",
       "blueberry"
     ],
     "external_links": []
@@ -3403,18 +3373,17 @@
       "estate:Attikan"
     ],
     "deepseek_enriched": false,
-    "price_250g": null,
-    "acidity": null,
+    "price_250g": 250.0,
+    "acidity": "low",
     "body": null,
     "sweetness": null,
-    "aroma": null,
-    "with_milk_suitable": null,
+    "aroma": "nutty",
+    "with_milk_suitable": true,
     "varietals": null,
     "altitude_meters": null,
     "prices": [],
     "brew_methods": [],
     "flavor_profiles": [
-      "fig",
       "chocolate",
       "almond"
     ],

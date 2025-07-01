@@ -3,12 +3,20 @@ Configuration module for the Coffee Scraper.
 Handles all environment variables and project settings.
 """
 
+from dotenv import load_dotenv
 import os
 from pathlib import Path
 from typing import Optional
 
-from dotenv import load_dotenv
 from pydantic import BaseModel
+
+# Always load .env at the very top
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+
+print("DEBUG: All environment variables:")
+for k, v in os.environ.items():
+    if "KEY" in k or "OPENAI" in k:
+        print(f"{k}={v}")
 
 # Determine environment (dev, test, prod, etc.)
 ENV = os.getenv("ENV", "dev")
@@ -62,7 +70,6 @@ class LLMConfig(BaseModel):
 
     openai_api_key: Optional[str] = None
     deepseek_api_key: Optional[str] = None
-
 
 # Main configuration object
 class Config(BaseModel):

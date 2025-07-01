@@ -105,7 +105,7 @@ async def enrich_roaster_data_with_crawl4ai(roaster_data: Dict[str, Any], url: s
         return roaster_data
 
     llm_strategy = LLMExtractionStrategy(
-        llm_config=Crawl4AILLMConfig(provider="deepseek-ai/deepseek-chat", api_token=config.llm.deepseek_api_key),
+        llm_config=Crawl4AILLMConfig(provider="deepseek", api_token=config.llm.deepseek_api_key),
         schema=RoasterEnrichmentData.model_json_schema(),
         extraction_type="schema",
         instruction=f"Extract the following missing information about this coffee roaster: {', '.join(missing_fields)}. Only return information you're confident about.",

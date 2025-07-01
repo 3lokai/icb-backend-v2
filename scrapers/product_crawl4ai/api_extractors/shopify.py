@@ -237,6 +237,26 @@ def standardize_shopify_product(
         # Calculate normalized 250g price if we have price data
         if product["prices"]:
             product["price_250g"] = calculate_normalized_price(product["prices"], 250)
+            logger.debug(f"Extracted prices from variants for {product['name']}: {product['prices']}")
+        else:
+            logger.debug(f"No prices extracted from variants for {product['name']}")
+    
+    # Fallback: If no prices found from variants, set price_250g directly from base price
+    if not product["prices"]:
+        logger.info(f"No structured pricing found for {product['name']}, using base price for price_250g")
+        # Get the base price directly from variants
+        base_price = None
+        for variant in shopify_product.get("variants", []):
+            if variant.get("price") and float(variant["price"]) > 0:
+                base_price = float(variant["price"])
+                break
+        
+        if base_price:
+            # Set the price directly to price_250g field
+            product["price_250g"] = base_price
+            logger.info(f"Set price_250g directly for {product['name']}: {base_price}")
+        else:
+            logger.warning(f"Failed to extract any prices for {product['name']}")
 
     # Extract metadata/attributes from product
     # Improved roast level and processing method extraction
@@ -259,14 +279,7 @@ def standardize_shopify_product(
     product["sweetness"] = extract_attribute(shopify_product, "sweetness", ["sweetness", "coffee_sweetness"])
 
     raw_aroma = extract_attribute(shopify_product, "aroma", ["aroma", "fragrance", "coffee_aroma", "aromatic_profile"])
-    if isinstance(raw_aroma, list):
-        product["aroma"] = ", ".join(filter(None, [str(a).strip() for a in raw_aroma]))
-    elif isinstance(raw_aroma, str):
-        product["aroma"] = raw_aroma.strip()
-    elif raw_aroma is not None:
-        product["aroma"] = str(raw_aroma)
-    else:
-        product["aroma"] = None
+    product["aroma"] = standardize_aroma_intensity(raw_aroma)
 
     raw_varietals = extract_attribute(
         shopify_product, "varietals", ["varietals", "varietal", "coffee_varietals", "cultivar"]
@@ -533,6 +546,106 @@ def extract_attribute(shopify_product: Dict[str, Any], field_name: str, possible
     return None
 
 
+def standardize_aroma_intensity(aroma_value: Any) -> Optional[str]:
+    """
+    Standardize aroma to intensity levels: low, low-medium, medium, medium-high, high.
+    
+    Args:
+        aroma_value: Raw aroma value from metafields or other sources
+        
+    Returns:
+        Standardized aroma intensity level or None if cannot be determined
+    """
+    if not aroma_value:
+        return None
+    
+    # Convert to string for processing
+    if isinstance(aroma_value, list):
+        aroma_str = ", ".join(filter(None, [str(a).strip() for a in aroma_value]))
+    else:
+        aroma_str = str(aroma_value).strip()
+    
+    if not aroma_str:
+        return None
+    
+    aroma_lower = aroma_str.lower()
+    
+    # Direct intensity level mappings
+    intensity_mappings = {
+        # Low intensity
+        "low": "low",
+        "light": "low",
+        "subtle": "low",
+        "mild": "low",
+        "delicate": "low",
+        "faint": "low",
+        "soft": "low",
+        
+        # Low-medium intensity
+        "low-medium": "low-medium",
+        "low medium": "low-medium",
+        "light-medium": "low-medium",
+        "light medium": "low-medium",
+        "moderate-low": "low-medium",
+        "moderate low": "low-medium",
+        
+        # Medium intensity
+        "medium": "medium",
+        "moderate": "medium",
+        "balanced": "medium",
+        "average": "medium",
+        "standard": "medium",
+        
+        # Medium-high intensity
+        "medium-high": "medium-high",
+        "medium high": "medium-high",
+        "moderate-high": "medium-high",
+        "moderate high": "medium-high",
+        "strong-medium": "medium-high",
+        "strong medium": "medium-high",
+        
+        # High intensity
+        "high": "high",
+        "strong": "high",
+        "intense": "high",
+        "bold": "high",
+        "powerful": "high",
+        "robust": "high",
+        "pronounced": "high",
+        "distinct": "high",
+    }
+    
+    # Check for exact matches first
+    for term, intensity in intensity_mappings.items():
+        if term in aroma_lower:
+            return intensity
+    
+    # Check for partial matches and patterns
+    if any(word in aroma_lower for word in ["low", "light", "subtle", "mild", "delicate", "faint", "soft"]):
+        return "low"
+    elif any(word in aroma_lower for word in ["medium", "moderate", "balanced", "average"]):
+        return "medium"
+    elif any(word in aroma_lower for word in ["high", "strong", "intense", "bold", "powerful", "robust", "pronounced", "distinct"]):
+        return "high"
+    
+    # If the value contains descriptive terms (like "brown spices", "dried fruits"), 
+    # it's likely a flavor description, not an intensity level
+    # In this case, return None to indicate no intensity information
+    flavor_indicators = [
+        "spice", "fruit", "berry", "chocolate", "caramel", "nut", "floral", 
+        "citrus", "vanilla", "honey", "toffee", "cocoa", "earthy", "woody",
+        "herb", "spice", "pepper", "cinnamon", "clove", "ginger", "cardamom"
+    ]
+    
+    if any(indicator in aroma_lower for indicator in flavor_indicators):
+        logger.debug(f"Aroma value '{aroma_str}' appears to be a flavor description, not intensity level")
+        return None
+    
+    # Default to medium if we can't determine
+    logger.debug(f"Could not determine aroma intensity from '{aroma_str}', defaulting to medium")
+    return "medium"
+
+
 def extract_prices_from_variants(variants: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Extract pricing information from Shopify variants.
@@ -578,6 +691,9 @@ def extract_prices_from_variants(variants: List[Dict[str, Any]]) -> List[Dict[st
             if weight_grams not in prices_by_size or float(variant["price"]) < prices_by_size[weight_grams]:
                 prices_by_size[weight_grams] = float(variant["price"])
     return [{"size_grams": size, "price": price} for size, price in prices_by_size.items()]
+
+
+
 
 
 def calculate_normalized_price(prices: List[Dict[str, Any]], target_size: int = 250) -> Optional[float]:

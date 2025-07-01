@@ -16,6 +16,7 @@ from common.utils import (
     standardize_processing_method,
     standardize_roast_level,
 )
+from .shopify import standardize_aroma_intensity
 from db.models import Coffee
 
 logger = logging.getLogger(__name__)
@@ -229,24 +230,25 @@ def standardize_woocommerce_product(
     # Clean HTML tags from description
     description = clean_description(description)
 
-    # Create base product
+    # Create base product - match the Coffee model structure exactly
     product = {
         "name": name,
         "slug": slug or slugify(name),
-        "roaster_id": roaster_id,
+        "roaster_id": roaster_id,  # This should match the Coffee model field
         "description": description,
         "direct_buy_url": "",
         "image_url": None,
         "is_available": True,
-        "is_featured": False,  # This is set manually on our platform
-        "deepseek_enriched": False,  # This is set during enrichment process
+        "is_featured": False,
+        "deepseek_enriched": False,
         "roast_level": None,
         "bean_type": None,
         "processing_method": None,
         "region_name": None,
-        "region_id": None,  # Will be set later if region is known
+        "region_id": None,
         "is_single_origin": None,
         "is_seasonal": None,
+        "price_250g": None,  # Add this field to match Coffee model
         "acidity": None,
         "body": None,
         "sweetness": None,
@@ -254,11 +256,11 @@ def standardize_woocommerce_product(
         "with_milk_suitable": None,
         "varietals": None,
         "altitude_meters": None,
-        "product_type": woo_product.get("type", woo_product.get("product_type", "")),
         "tags": _process_tags(woo_product.get("tags", [])),
+        # Related data fields (not stored directly in DB)
         "prices": [],
-        "flavor_profiles": [],
         "brew_methods": [],
+        "flavor_profiles": [],
         "external_links": [],
         "source": "woocommerce_api",
     }
@@ -303,6 +305,29 @@ def standardize_woocommerce_product(
     # Calculate normalized 250g price if we have price data
     if product["prices"]:
         product["price_250g"] = calculate_normalized_price(product["prices"], 250)
+        logger.debug(f"Extracted prices from variants for {product['name']}: {product['prices']}")
+    else:
+        logger.debug(f"No prices extracted from variants for {product['name']}")
+    
+    # Fallback: If no prices found from variants, set price_250g directly from base price
+    if not product["prices"]:
+        logger.info(f"No structured pricing found for {product['name']}, using base price for price_250g")
+        # Get the base price directly from variants
+        base_price = None
+        if "variations" in woo_product and woo_product["variations"]:
+            for variation in woo_product["variations"]:
+                if variation.get("price") and float(variation["price"]) > 0:
+                    base_price = float(variation["price"])
+                    break
+        elif "price" in woo_product and woo_product["price"]:
+            base_price = float(woo_product["price"])
+        
+        if base_price:
+            # Set the price directly to price_250g field
+            product["price_250g"] = base_price
+            logger.info(f"Set price_250g directly for {product['name']}: {base_price}")
+        else:
+            logger.warning(f"Failed to extract any prices for {product['name']}")
 
     # Extract metadata from product attributes
     if "attributes" in woo_product and woo_product["attributes"]:
@@ -334,12 +359,7 @@ def standardize_woocommerce_product(
                 elif any(term in attr_name for term in ["sweetness", "sweetness level"]):
                     product["sweetness"] = attr_value
                 elif any(term in attr_name for term in ["aroma", "fragrance", "scent"]):
-                    if isinstance(attr_value, list):
-                        product["aroma"] = ", ".join(filter(None, [str(a).strip() for a in attr_value]))
-                    elif isinstance(attr_value, str):
-                        product["aroma"] = attr_value.strip()
-                    elif attr_value is not None:
-                        product["aroma"] = str(attr_value)
+                    product["aroma"] = standardize_aroma_intensity(attr_value)
                 elif any(term in attr_name for term in ["milk", "with milk", "milk suitable"]):
                     if isinstance(attr_value, str):
                         product["with_milk_suitable"] = attr_value.lower() in ["true", "yes", "1", "suitable"]
@@ -381,54 +401,8 @@ def standardize_woocommerce_product(
                 elif "single origin" in attr_name.lower():
                     product["is_single_origin"] = attr_value.lower() not in ("no", "false", "0")
 
-    # Process meta_data for any missing fields
-    if "meta_data" in woo_product and isinstance(woo_product["meta_data"], list):
-        for meta_item in woo_product["meta_data"]:
-            meta_key = meta_item.get("key", "").lower()
-            meta_value = meta_item.get("value")
-
-            if product.get("acidity") is None and any(
-                k in meta_key for k in ["_acidity", "coffee_acidity", "acidity_level", "acidity_rating", "acf_acidity"]
-            ):
-                product["acidity"] = str(meta_value).strip() if meta_value is not None else None
-            if product.get("body") is None and any(
-                k in meta_key for k in ["_body", "coffee_body", "mouthfeel", "texture", "acf_body"]
-            ):
-                product["body"] = str(meta_value).strip() if meta_value is not None else None
-            if product.get("sweetness") is None and any(
-                k in meta_key for k in ["_sweetness", "coffee_sweetness", "sweetness_level", "acf_sweetness"]
-            ):
-                product["sweetness"] = str(meta_value).strip() if meta_value is not None else None
-            if product.get("aroma") is None and any(
-                k in meta_key for k in ["_aroma", "coffee_aroma", "fragrance", "scent", "acf_aroma"]
-            ):
-                if isinstance(meta_value, list):
-                    product["aroma"] = ", ".join(filter(None, [str(a).strip() for a in meta_value]))
-                elif meta_value is not None:
-                    product["aroma"] = str(meta_value).strip()
-            if product.get("with_milk_suitable") is None and any(
-                k in meta_key for k in ["_milk_suitable", "with_milk", "suitable_for_milk", "acf_milk_suitable"]
-            ):
-                if isinstance(meta_value, str):
-                    product["with_milk_suitable"] = meta_value.lower() in ["true", "yes", "1", "suitable"]
-                elif isinstance(meta_value, bool):
-                    product["with_milk_suitable"] = meta_value
-                elif isinstance(meta_value, int):
-                    product["with_milk_suitable"] = bool(meta_value)
-            if product.get("varietals") is None and any(
-                k in meta_key for k in ["_varietals", "coffee_varietals", "varietal", "cultivar", "acf_varietals"]
-            ):
-                if isinstance(meta_value, str):
-                    product["varietals"] = [v.strip() for v in meta_value.split(",") if v.strip()]
-                elif isinstance(meta_value, list):
-                    product["varietals"] = [str(v).strip() for v in meta_value if str(v).strip()]
-                elif meta_value is not None:
-                    product["varietals"] = [str(meta_value).strip()]
-            if product.get("altitude_meters") is None and any(
-                k in meta_key
-                for k in ["_altitude", "_altitude_meters", "elevation", "masl", "grown_at", "acf_altitude"]
-            ):
-                product["altitude_meters"] = _parse_altitude_string(meta_value)
+    # Note: Meta data extraction removed - requires API authentication
+    # Meta data fields will be populated through LLM enrichment if needed
 
     # Extract attributes from tags as a fallback
     tag_extracted_attrs = _extract_attributes_from_tags(product.get("tags", []))
@@ -442,7 +416,7 @@ def standardize_woocommerce_product(
 
     if product.get("aroma") is None and tag_extracted_attrs.get("aroma"):
         # Value from tag is expected to be a string already
-        product["aroma"] = str(tag_extracted_attrs["aroma"]).strip()
+        product["aroma"] = standardize_aroma_intensity(tag_extracted_attrs["aroma"])
 
     if product.get("with_milk_suitable") is None and tag_extracted_attrs.get("with_milk_suitable"):
         raw_milk_from_tag = tag_extracted_attrs["with_milk_suitable"]
