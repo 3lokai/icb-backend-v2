@@ -17,6 +17,15 @@ from common.utils import (
     standardize_processing_method,
     standardize_roast_level,
 )
+from scrapers.product_crawl4ai.extractors import (
+    detect_is_seasonal,
+    detect_is_single_origin,
+    extract_all_attributes,
+    extract_flavor_profiles,
+    normalize_coffee_data,
+    process_woocommerce_variants,
+    standardize_coffee_model,
+)
 from .shopify import standardize_aroma_intensity
 from db.models import Coffee
 
@@ -301,20 +310,12 @@ def standardize_woocommerce_product(
                 elif isinstance(category, str):
                     product["tags"].append(category)
 
-    # Extract prices from variants
-    extract_prices_from_woocommerce(woo_product, product)
-
-    # Calculate normalized 250g price if we have price data
-    if product["prices"]:
-        product["price_250g"] = calculate_normalized_price(product["prices"], 250)
-        logger.debug(f"Extracted prices from variants for {product['name']}: {product['prices']}")
-    else:
-        logger.debug(f"No prices extracted from variants for {product['name']}")
+    # Use shared extractor for pricing
+    product = process_woocommerce_variants(product, woo_product.get("variations", []), confidence_tracking=True)
     
     # Fallback: If no prices found from variants, set price_250g directly from base price
-    if not product["prices"]:
+    if not product.get("price_250g"):
         logger.info(f"No structured pricing found for {product['name']}, using base price for price_250g")
-        # Get the base price directly from variants
         base_price = None
         if "variations" in woo_product and woo_product["variations"]:
             for variation in woo_product["variations"]:
@@ -325,59 +326,37 @@ def standardize_woocommerce_product(
             base_price = float(woo_product["price"])
         
         if base_price:
-            # Set the price directly to price_250g field
             product["price_250g"] = base_price
             logger.info(f"Set price_250g directly for {product['name']}: {base_price}")
         else:
             logger.warning(f"Failed to extract any prices for {product['name']}")
 
-    # Extract metadata from product attributes using enhanced methods
-    # Enhanced roast level and processing method extraction
-    product["roast_level"] = extract_roast_level_from_woocommerce(woo_product, product.get("tags", []))
-    product["bean_type"] = standardize_bean_type(
-        extract_attribute_from_woocommerce(
-            woo_product, "bean_type", ["bean type", "bean-type", "beans", "variety", "coffee_bean_type"]
-        )
-    )
-    product["processing_method"] = extract_processing_method_from_woocommerce(
-        woo_product, product.get("tags", []), product["name"], product["slug"]
-    )
-    product["region_name"] = extract_attribute_from_woocommerce(
-        woo_product, "region_name", ["origin", "region", "country", "coffee_origin"]
+    # Use shared extractors for comprehensive attribute extraction
+    product = extract_all_attributes(
+        product,
+        product["description"],
+        product.get("tags", []),
+        woo_product,  # structured_data
+        product["name"],
+        confidence_tracking=True
     )
 
-    # Extract other attributes from product attributes
+    # Extract additional attributes from WooCommerce-specific fields
     if "attributes" in woo_product and woo_product["attributes"]:
         for attr in woo_product["attributes"]:
             attr_name = attr.get("name", "").lower()
-
-            # Get attribute value (could be in 'option' or 'options')
             attr_value = attr.get("option", "")
+            
             if not attr_value and "options" in attr and attr["options"]:
                 if isinstance(attr["options"], list) and len(attr["options"]) > 0:
                     attr_value = attr["options"][0]
                 elif isinstance(attr["options"], str):
                     attr_value = attr["options"]
 
-            # Match attribute to our fields
+            # Handle WooCommerce-specific attribute mappings
             if attr_value:
-                if any(term in attr_name for term in ["acidity", "acid_level", "acidity level"]):
-                    product["acidity"] = attr_value
-                elif any(term in attr_name for term in ["body", "mouthfeel", "texture"]):
-                    product["body"] = attr_value
-                elif any(term in attr_name for term in ["sweetness", "sweetness level"]):
-                    product["sweetness"] = attr_value
-                elif any(term in attr_name for term in ["aroma", "fragrance", "scent"]):
-                    product["aroma"] = standardize_aroma_intensity(attr_value)
-                elif any(term in attr_name for term in ["milk", "with milk", "milk suitable"]):
-                    if isinstance(attr_value, str):
-                        product["with_milk_suitable"] = attr_value.lower() in ["true", "yes", "1", "suitable"]
-                    elif isinstance(attr_value, bool):
-                        product["with_milk_suitable"] = attr_value
-                    elif isinstance(attr_value, int):
-                        product["with_milk_suitable"] = bool(attr_value)
-                elif any(term in attr_name for term in ["varietal", "varietals", "cultivar", "bean varietals"]):
-                    options = attr.get("options", [])  # Prefer 'options' list if available
+                if any(term in attr_name for term in ["varietal", "varietals", "cultivar", "bean varietals"]):
+                    options = attr.get("options", [])
                     if options and isinstance(options, list):
                         product["varietals"] = [str(opt).strip() for opt in options if str(opt).strip()]
                     elif isinstance(attr_value, str):
@@ -442,41 +421,32 @@ def standardize_woocommerce_product(
     if product.get("altitude_meters") is None and tag_extracted_attrs.get("altitude_meters"):
         product["altitude_meters"] = _parse_altitude_string(tag_extracted_attrs["altitude_meters"])
 
-    # Extract metadata from description if not found from attributes, meta_data or tags
-    extracted_data = extract_coffee_metadata_from_description(description)
-    for key, value in extracted_data.items():
-        # Ensure we only fill if product field is still None or empty (for lists)
-        if key in product and (product[key] is None or (isinstance(product[key], list) and not product[key])):
-            # Specific handling for fields that might come from description extraction
-            if key == "roast_level" and product.get("roast_level") is None:
-                product["roast_level"] = standardize_roast_level(value)
-            elif key == "bean_type" and product.get("bean_type") is None:
-                product["bean_type"] = standardize_bean_type(value)
-            elif key == "processing_method" and product.get("processing_method") is None:
-                product["processing_method"] = standardize_processing_method(value)
-            elif key == "region_name" and product.get("region_name") is None:
-                product["region_name"] = value
-            # For flavor_notes from description, it should populate flavor_profiles
-            elif key == "flavor_notes" and not product.get("flavor_profiles"):
-                product["flavor_profiles"] = [fn.strip() for fn in value.split(",") if fn.strip()]
-            # Other fields like elevation are not directly mapped here unless new fields added to extract_coffee_metadata_from_description
-
-    # Ensure flavor_profiles and brew_methods are populated if still empty
-    if not product.get("flavor_profiles"):  # Check if list is empty or None
-        product["flavor_profiles"] = extract_flavor_profiles(description)
-
-    if not product.get("brew_methods"):  # Check if list is empty or None
-        product["brew_methods"] = extract_brew_methods(description)
-
-    # Determine single origin status if not set yet
-    if product["is_single_origin"] is None:
-        product["is_single_origin"] = _determine_single_origin(
-            product["name"], product["description"], product.get("product_type", ""), product.get("tags", [])
+    # Use shared extractors for flavor profiles if not already set
+    if not product.get("flavor_profiles"):
+        flavor_profiles, _ = extract_flavor_profiles(
+            product["description"], product.get("tags", []), woo_product
         )
+        if flavor_profiles:
+            product["flavor_profiles"] = flavor_profiles
+        else:
+            product["flavor_profiles"] = []
 
-    # Determine if product is seasonal if not set yet
+    # Extract brew methods from description
+    if not product.get("brew_methods"):
+        product["brew_methods"] = extract_brew_methods(product["description"])
+
+    # Use shared extractors for single origin and seasonal detection if not set
+    if product["is_single_origin"] is None:
+        is_single_origin, _ = detect_is_single_origin(
+            product["name"], product["description"], product.get("tags", [])
+        )
+        product["is_single_origin"] = is_single_origin
+
     if product["is_seasonal"] is None:
-        product["is_seasonal"] = _is_seasonal_product(product.get("tags", []), product["description"], product["name"])
+        is_seasonal, _ = detect_is_seasonal(
+            product["name"], product["description"], product.get("tags", [])
+        )
+        product["is_seasonal"] = is_seasonal
 
     # Look for estate mentions in tags or product name/description
     estates = extract_estates(product["name"], product["description"], product.get("tags", []))
@@ -489,9 +459,6 @@ def standardize_woocommerce_product(
                 product["tags"].append(estate_tag)
 
     return product
-
-
-
 
 
 def _process_tags(tags: Union[List[Dict[str, str]], List[str], str]) -> List[str]:
@@ -511,71 +478,7 @@ def _process_tags(tags: Union[List[Dict[str, str]], List[str], str]) -> List[str
     return result
 
 
-def _determine_single_origin(name: str, description: str, product_type: str, tags: List[str]) -> bool:
-    """Determine if a product is single origin based on various signals."""
-    name_lower = name.lower()
-    desc_lower = description.lower()
-
-    # Check for blend indicators
-    blend_indicators = ["blend", "mixed", "combination", "composite"]
-    for indicator in blend_indicators:
-        if indicator in name_lower or indicator in desc_lower:
-            return False
-
-    # Check for single origin indicators
-    single_origin_indicators = ["single origin", "single-origin", "estate", "farm", "microlot"]
-    for indicator in single_origin_indicators:
-        if indicator in name_lower or indicator in desc_lower:
-            return True
-
-    # Check tags
-    for tag in tags:
-        tag = tag.lower()
-        if any(indicator in tag for indicator in blend_indicators):
-            return False
-        if any(indicator in tag for indicator in single_origin_indicators):
-            return True
-
-    # Default: If "Estate" is in the name, it's likely single origin
-    if "estate" in name_lower:
-        return True
-
-    # Default to False if we can't determine
-    return False
-
-
-def _is_seasonal_product(tags: List[str], description: str, name: str) -> bool:
-    """Determine if a product is seasonal based on tags and description."""
-    # Check tags first
-    if any(tag.lower() in ["seasonal", "limited", "limited-edition", "limited edition"] for tag in tags):
-        return True
-
-    # Check description
-    desc_lower = description.lower()
-    seasonal_indicators = [
-        "seasonal",
-        "limited",
-        "limited edition",
-        "limited-edition",
-        "special release",
-        "for a limited time",
-        "while supplies last",
-        "short run",
-        "small batch",
-        "exclusive release",
-    ]
-
-    for indicator in seasonal_indicators:
-        if indicator in desc_lower:
-            return True
-
-    # Check name
-    name_lower = name.lower()
-    for indicator in seasonal_indicators:
-        if indicator in name_lower:
-            return True
-
-    return False
+# Removed duplicate functions - now using shared extractors
 
 
 def extract_coffee_metadata_from_description(description: str) -> dict:
@@ -604,16 +507,15 @@ def extract_coffee_metadata_from_description(description: str) -> dict:
         (r"elevation\s*:?\s*([^\.,:;\n]+)", "elevation"),
         (r"altitude\s*:?\s*([^\.,:;\n]+)", "elevation"),
         (r"grown at\s+([^\.,:;\n]+)", "elevation"),
-        # Roast level patterns
+        # Roast level patterns - improved to handle "Roast Profile : Light Roast" format
         (r"roast\s+(?:level|profile)\s*:?\s*([^\.,:;\n]+)", "roast_level"),
         (r"([^\.,:;\n]+)\s+roast", "roast_level"),
-        # Bean type patterns
+        # Bean type patterns - improved to handle "Variety : Arabica" format
         (r"(?:bean|variety)\s+type\s*:?\s*([^\.,:;\n]+)", "bean_type"),
         (r"variety\s*:?\s*([^\.,:;\n]+)", "bean_type"),
-        (r"arabica|robusta|liberica|bourbon|typica|gesha|caturra", "bean_type"),
-        # Processing method patterns
+        # Processing method patterns - improved to handle "pulp-sundried" and other formats
         (r"process(?:ing)?\s+(?:method)?\s*:?\s*([^\.,:;\n]+)", "processing_method"),
-        (r"(?:washed|natural|honey|pulped|anaerobic|monsooned|wet-hulled)", "processing_method"),
+        (r"(?:washed|natural|honey|pulped|anaerobic|monsooned|wet-hulled|pulp-sundried)", "processing_method"),
         # Flavor notes patterns
         (r"(?:flavor|tasting)\s+notes\s*:?\s*([^\.,:;\n]+)", "flavor_notes"),
         (r"notes\s+of\s+([^\.,:;\n]+)", "flavor_notes"),
@@ -637,354 +539,56 @@ def extract_coffee_metadata_from_description(description: str) -> dict:
     if re.search(r"(?:seasonal|limited|special|edition|harvest)", description, re.IGNORECASE):
         metadata["is_seasonal"] = True
 
+    # Special case for direct bean type detection if not found by patterns
+    if "bean_type" not in metadata:
+        if re.search(r"\b(?:variety|type)\s*:?\s*(arabica)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "arabica"
+        elif re.search(r"\b(?:variety|type)\s*:?\s*(robusta)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "robusta"
+        elif re.search(r"\b(?:variety|type)\s*:?\s*(liberica)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "liberica"
+        elif re.search(r"\b(arabica)\b", description, re.IGNORECASE) and not re.search(r"\b(robusta|liberica)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "arabica"
+        elif re.search(r"\b(robusta)\b", description, re.IGNORECASE) and not re.search(r"\b(arabica|liberica)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "robusta"
+        elif re.search(r"\b(liberica)\b", description, re.IGNORECASE) and not re.search(r"\b(arabica|robusta)\b", description, re.IGNORECASE):
+            metadata["bean_type"] = "liberica"
+
+    # Special case for direct roast level detection if not found by patterns
+    if "roast_level" not in metadata:
+        if re.search(r"\b(?:roast\s+(?:level|profile))\s*:?\s*(light)\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "light"
+        elif re.search(r"\b(?:roast\s+(?:level|profile))\s*:?\s*(medium)\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "medium"
+        elif re.search(r"\b(?:roast\s+(?:level|profile))\s*:?\s*(dark)\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "dark"
+        elif re.search(r"\b(light)\s+roast\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "light"
+        elif re.search(r"\b(medium)\s+roast\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "medium"
+        elif re.search(r"\b(dark)\s+roast\b", description, re.IGNORECASE):
+            metadata["roast_level"] = "dark"
+
+    # Special case for processing method detection if not found by patterns
+    if "processing_method" not in metadata:
+        if re.search(r"\b(pulp-sundried)\b", description, re.IGNORECASE):
+            metadata["processing_method"] = "pulped-natural"
+        elif re.search(r"\b(monsooned)\b", description, re.IGNORECASE):
+            metadata["processing_method"] = "monsooned"
+        elif re.search(r"\b(washed)\b", description, re.IGNORECASE):
+            metadata["processing_method"] = "washed"
+        elif re.search(r"\b(natural)\b", description, re.IGNORECASE):
+            metadata["processing_method"] = "natural"
+        elif re.search(r"\b(honey)\b", description, re.IGNORECASE):
+            metadata["processing_method"] = "honey"
+
     return metadata
 
 
-def extract_prices_from_woocommerce(woo_product: Dict[str, Any], product: Dict[str, Any]) -> None:
-    """
-    Extract price information from WooCommerce product data.
-    Updates the product['prices'] list in place.
-
-    Args:
-        woo_product: WooCommerce product data
-        product: Product dictionary to update
-    """
-    # First try to extract from variations
-    if "variations" in woo_product and woo_product["variations"]:
-        # Handle full variation objects
-        for variation in woo_product["variations"]:
-            extract_price_from_variation(variation, product)
-    elif "variable_products" in woo_product and woo_product["variable_products"]:
-        # Handle variable products structure
-        for variation in woo_product["variable_products"]:
-            extract_price_from_variation(variation, product)
-
-    # If no prices found yet, try the prices object (newer WooCommerce versions)
-    if not product["prices"] and "prices" in woo_product and woo_product["prices"]:
-        prices = woo_product["prices"]
-        if "price" in prices:
-            try:
-                price_str = prices["price"]
-                if isinstance(price_str, str):
-                    # Clean the price string (remove currency symbols, etc.)
-                    price = float(re.sub(r"[^0-9.]", "", price_str))
-                    # WooCommerce often returns prices in minor currency units (cents/paise)
-                    if price > 1000 and price % 100 == 0:
-                        price = price / 100
-                elif isinstance(price_str, (int, float)):
-                    price = float(price_str)
-                    if price > 1000 and price % 100 == 0:
-                        price = price / 100
-                product["prices"].append({"size_grams": 250, "price": price})
-            except Exception as e:
-                logger.debug(f"Failed to extract price from prices object: {e}")
-
-    # If still no prices, try price_html
-    if not product["prices"] and "price_html" in woo_product and woo_product["price_html"]:
-        try:
-            price_html = woo_product["price_html"]
-            price_match = re.search(
-                r"<span[^>]*>(?:<bdi>)?(?:\$|€|£|₹|¥|Rs\.?|USD|EUR|GBP|INR|JPY)\s*([0-9.,]+)", price_html
-            )
-            if price_match:
-                price = float(price_match.group(1).replace(",", ""))
-                product["prices"].append({"size_grams": 250, "price": price})
-        except Exception as e:
-            logger.debug(f"Failed to extract price from HTML: {e}")
-
-    # Try regular price field as a last resort
-    if not product["prices"] and "price" in woo_product:
-        try:
-            price_value = woo_product["price"]
-            if isinstance(price_value, str):
-                price = float(re.sub(r"[^0-9.]", "", price_value))
-                if price > 1000 and price % 100 == 0:
-                    price = price / 100
-            else:
-                price = float(price_value)
-                if price > 1000 and price % 100 == 0:
-                    price = price / 100
-            product["prices"].append({"size_grams": 250, "price": price})
-        except Exception as e:
-            logger.debug(f"Failed to extract price from price field: {e}")
+# Removed duplicate pricing functions - now using shared extractors
 
 
-def extract_price_from_variation(variation: Dict[str, Any], product: Dict[str, Any]) -> None:
-    """
-    Extract price and weight information from a product variation.
-    Updates the product['prices'] list in place.
-
-    Args:
-        variation: Product variation data
-        product: Product dictionary to update
-    """
-    # Skip if no price
-    price = None
-
-    # Try different price fields
-    if "price" in variation:
-        price = variation["price"]
-    elif "display_price" in variation:
-        price = variation["display_price"]
-    elif "regular_price" in variation:
-        price = variation["regular_price"]
-
-    # If price is a string, convert to float
-    if isinstance(price, str):
-        try:
-            price = float(re.sub(r"[^0-9.]", "", price))
-        except ValueError:
-            price = None
-
-    if price is None:
-        return
-
-    # Try to extract weight from variation attributes or name
-    weight_grams = None
-
-    # Check attributes
-    if "attributes" in variation:
-        for attr in variation["attributes"]:
-            attr_name = attr.get("name", "").lower()
-            if any(term in attr_name for term in ["weight", "size", "quantity"]):
-                attr_value = attr.get("option", "")
-                weight_match = re.search(r"(\d+\.?\d*)\s*(?:g|gram|gm|kg)", attr_value, re.IGNORECASE)
-                if weight_match:
-                    weight = float(weight_match.group(1))
-                    # Convert kg to grams if needed
-                    if "kg" in attr_value.lower() or "kilo" in attr_value.lower():
-                        weight *= 1000
-                    weight_grams = int(weight)
-
-    # Try variation name if no weight found in attributes
-    if not weight_grams and "name" in variation:
-        name = variation["name"]
-        weight_match = re.search(r"(\d+\.?\d*)\s*(?:g|gram|gm|kg)", name, re.IGNORECASE)
-        if weight_match:
-            weight = float(weight_match.group(1))
-            # Convert kg to grams if needed
-            if "kg" in name.lower() or "kilo" in name.lower():
-                weight *= 1000
-            weight_grams = int(weight)
-
-    # Try description if no weight found yet
-    if not weight_grams and "description" in variation:
-        desc = variation["description"]
-        weight_match = re.search(r"(\d+\.?\d*)\s*(?:g|gram|gm|kg)", desc, re.IGNORECASE)
-        if weight_match:
-            weight = float(weight_match.group(1))
-            # Convert kg to grams if needed
-            if "kg" in desc.lower() or "kilo" in desc.lower():
-                weight *= 1000
-            weight_grams = int(weight)
-
-    # Default to 250g if no weight found
-    if not weight_grams:
-        weight_grams = 250
-
-    # Improved price conversion heuristic for paise/rupees
-    if price is not None and price > 1000:
-        if price % 100 == 0 or price % 100 == 99 or price % 100 == 50:
-            price = price / 100
-        elif price > 5000:
-            price = price / 100
-    product["prices"].append({"size_grams": weight_grams, "price": price})
-
-
-def calculate_normalized_price(prices: List[Dict[str, Any]], target_size: int = 250) -> Optional[float]:
-    """
-    Calculate a normalized price for a standard weight (default 250g).
-    Uses linear interpolation between package sizes.
-
-    Args:
-        prices: List of price objects with size_grams and price
-        target_size: Target size in grams to normalize to
-
-    Returns:
-        Normalized price or None if cannot be calculated
-    """
-    if not prices:
-        return None
-
-    # Sort prices by size
-    sorted_prices = sorted(prices, key=lambda x: x["size_grams"])
-
-    # If we have a direct match, use it
-    for price in sorted_prices:
-        if price["size_grams"] == target_size:
-            return price["price"]
-
-    # If target is smaller than smallest size, scale down from smallest
-    if target_size < sorted_prices[0]["size_grams"]:
-        smallest = sorted_prices[0]
-        return (target_size / smallest["size_grams"]) * smallest["price"]
-
-    # If target is larger than largest size, scale up from largest
-    if target_size > sorted_prices[-1]["size_grams"]:
-        largest = sorted_prices[-1]
-        return (target_size / largest["size_grams"]) * largest["price"]
-
-    # Find the two sizes that bracket the target size
-    for i in range(len(sorted_prices) - 1):
-        lower = sorted_prices[i]
-        upper = sorted_prices[i + 1]
-
-        if lower["size_grams"] <= target_size <= upper["size_grams"]:
-            # Linear interpolation
-            size_ratio = (target_size - lower["size_grams"]) / (upper["size_grams"] - lower["size_grams"])
-            price_diff = upper["price"] - lower["price"]
-            return lower["price"] + (size_ratio * price_diff)
-
-    # Fallback: use the closest size
-    closest = min(sorted_prices, key=lambda x: abs(x["size_grams"] - target_size))
-    return (target_size / closest["size_grams"]) * closest["price"]
-
-
-def extract_flavor_profiles(description: str) -> List[str]:
-    """Extract flavor profile notes from product description."""
-    # List of common coffee flavor descriptors
-    flavor_profiles = [
-        # Fruity
-        "berry",
-        "blueberry",
-        "strawberry",
-        "raspberry",
-        "blackberry",
-        "cherry",
-        "cranberry",
-        "apple",
-        "pear",
-        "grape",
-        "raisin",
-        "plum",
-        "peach",
-        "apricot",
-        "mango",
-        "papaya",
-        "pineapple",
-        "banana",
-        "melon",
-        "watermelon",
-        "citrus",
-        "lemon",
-        "lime",
-        "orange",
-        "grapefruit",
-        "passion fruit",
-        "kiwi",
-        "pomegranate",
-        "prune",
-        "date",
-        "fig",
-        "black currant",
-        "red currant",
-        "tropical",
-        # Floral
-        "floral",
-        "jasmine",
-        "rose",
-        "lavender",
-        "chamomile",
-        "hibiscus",
-        "elderflower",
-        # Sweet
-        "sweet",
-        "honey",
-        "caramel",
-        "toffee",
-        "butterscotch",
-        "molasses",
-        "maple",
-        "brown sugar",
-        "vanilla",
-        "marshmallow",
-        "chocolate",
-        "cocoa",
-        "candy",
-        # Nutty
-        "nut",
-        "nutty",
-        "almond",
-        "hazelnut",
-        "peanut",
-        "cashew",
-        "walnut",
-        "pecan",
-        # Spicy
-        "spice",
-        "cinnamon",
-        "clove",
-        "pepper",
-        "anise",
-        "cardamom",
-        "ginger",
-        # Earthy
-        "earthy",
-        "woody",
-        "musty",
-        "herbaceous",
-        "moss",
-        "leaf",
-        "soil",
-        # Other
-        "tobacco",
-        "leather",
-        "toasted",
-        "smoky",
-        "malty",
-        "graham cracker",
-        "biscuit",
-        "cereal",
-        "bread",
-        "buttery",
-        "creamy",
-        "winey",
-        "tea-like",
-        "black tea",
-        "green tea",
-    ]
-    found_flavors = []
-
-    # Check for phrases like "notes of X, Y, and Z"
-    notes_patterns = [
-        r"notes?\s+of\s+([A-Za-z0-9,\s&+]+)",
-        r"flavou?rs?\s+of\s+([A-Za-z0-9,\s&+]+)",
-        r"hints?\s+of\s+([A-Za-z0-9,\s&+]+)",
-        r"aromas?\s+of\s+([A-Za-z0-9,\s&+]+)",
-        r"tasting\s+notes:?\s+([A-Za-z0-9,\s&+:]+)",
-    ]
-
-    for pattern in notes_patterns:
-        match = re.search(pattern, description, re.IGNORECASE)
-        if match:
-            # Split the matched text into individual flavors
-            flavor_text = match.group(1).lower()
-            # Replace common separators with commas
-            flavor_text = re.sub(r"\s+and\s+", ",", flavor_text)
-            flavor_text = re.sub(r"\s*[&+]\s*", ",", flavor_text)
-            flavor_text = re.sub(r"\s*:\s*", ",", flavor_text)
-
-            # Split by comma and clean up
-            potential_flavors = [f.strip() for f in flavor_text.split(",")]
-            for flavor in potential_flavors:
-                # Add exact matches
-                if flavor in flavor_profiles:
-                    found_flavors.append(flavor)
-                else:
-                    # Look for partial matches
-                    for profile in flavor_profiles:
-                        if profile in flavor and profile not in found_flavors:
-                            found_flavors.append(profile)
-
-    # If we didn't find any flavors from specific phrases, look for any mentions
-    if not found_flavors:
-        for flavor in flavor_profiles:
-            # Ensure we're matching whole words/phrases
-            pattern = r"\b" + re.escape(flavor) + r"\b"
-            if re.search(pattern, description.lower(), re.IGNORECASE):
-                found_flavors.append(flavor)
-
-    return found_flavors
+# Removed duplicate flavor profiles and brew methods functions - now using shared extractors
 
 
 def extract_brew_methods(description: str) -> List[str]:
@@ -1245,16 +849,19 @@ def extract_attribute_from_woocommerce(woo_product: Dict[str, Any], field_name: 
             r"(light|medium|dark)(?:\s+roast)",
             r"roast(?:ed)?\s+(?:to\s+)?(?:a\s+)?(light|medium|dark)",
             r"(light|medium|dark)\s+roasted",
+            r"roast\s+(?:level|profile)\s*:?\s*(light|medium|dark)",
         ],
         "bean_type": [
             r"(arabica|robusta|liberica)(?:\s+beans?)",
             r"(?:100%\s+)?(arabica|robusta|liberica)",
             r"(single\s+origin)",
             r"(?:a\s+)?(blend)",
+            r"variety\s*:?\s*(arabica|robusta|liberica)",
         ],
         "processing_method": [
             r"(washed|natural|honey|pulped\s+natural|anaerobic)(?:\s+process)",
             r"process(?:ed)?\s+(?:using\s+)?(?:the\s+)?(washed|natural|honey|pulped\s+natural|anaerobic)",
+            r"(pulp-sundried)",
         ],
         "region_name": [r"(?:grown|cultivated|produced|harvested)\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)"],
     }
