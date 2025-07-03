@@ -61,7 +61,7 @@ This sequential validation minimizes resource usage on non-coffee products.
 ┌────────────┐     ┌───────────────────┐     ┌─────────────────┐
 │            │     │                   │     │                 │
 │  Platform  │     │  Platform-Specific│     │  Standardized   │
-│  Detection │───▶│  Extraction       │────▶│  Product Data   │
+│  Detection │───▶│  Extraction        │───▶│  Product Data   │
 │            │     │  (API-first)      │     │                 │
 └────────────┘     └───────────────────┘     └────────┬────────┘
                                                       │

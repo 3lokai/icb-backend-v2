@@ -92,7 +92,9 @@ def push_roasters_to_supabase(roasters_file: str, dry_run: bool = False) -> int:
         return 1
 
 
-def push_products_to_supabase(products_file: str, roaster_id: str = None, dry_run: bool = False) -> int:
+from typing import Optional
+
+def push_products_to_supabase(products_file: str, roaster_id: Optional[str] = None, dry_run: bool = False) -> int:
     """Push products from JSON file to Supabase using smart upsert."""
     try:
         # Load products
