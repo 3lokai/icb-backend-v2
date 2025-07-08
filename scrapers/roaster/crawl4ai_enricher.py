@@ -116,16 +116,17 @@ async def enrich_roaster_data_with_crawl4ai(roaster_data: Dict[str, Any], url: s
     config_obj = CrawlerRunConfig(extraction_strategy=llm_strategy, cache_mode="ENABLED")
     try:
         async with AsyncWebCrawler() as crawler:
-            result = await crawler.arun(html=html_input, url=url, config=config_obj)
-            if getattr(result, "success", False) and getattr(result, "extracted_content", None):
-                try:
-                    enriched_data = json.loads(result.extracted_content)
-                    for field in missing_fields:
-                        val = enriched_data.get(field)
-                        if val is not None and val != "":
-                            roaster_data[field] = val
-                except Exception as e:
-                    logger.error(f"Crawl4AI enrichment JSON parse error: {e}")
+            async for result in crawler.arun(html=html_input, url=url, config=config_obj):
+                if getattr(result, "success", False) and getattr(result, "extracted_content", None):
+                    try:
+                        enriched_data = json.loads(result.extracted_content)
+                        for field in missing_fields:
+                            val = enriched_data.get(field)
+                            if val is not None and val != "":
+                                roaster_data[field] = val
+                    except Exception as e:
+                        logger.error(f"Crawl4AI enrichment JSON parse error: {e}")
+                break  # Exit after first result
     except Exception as e:
         logger.error(f"Crawl4AI enrichment failed: {e}")
     return roaster_data

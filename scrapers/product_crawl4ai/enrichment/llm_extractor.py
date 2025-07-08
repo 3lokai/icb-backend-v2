@@ -287,21 +287,21 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=normalized_url, config=config_simple)
+            async for result in crawler.arun(url=normalized_url, config=config_simple):
+                if result.success and result.extracted_content:
+                    try:
+                        extracted = json.loads(result.extracted_content)
+                        _process_extracted_fields(product, extracted)
 
-            if result.success and result.extracted_content:
-                try:
-                    extracted = json.loads(result.extracted_content)
-                    _process_extracted_fields(product, extracted)
-
-                    logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
-                    product["deepseek_enriched"] = True
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse LLM response: {e}")
+                        logger.info(f"Successfully enriched product: {product.get('name', 'Unknown')}")
+                        product["deepseek_enriched"] = True
+                        break  # Exit after first successful result
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse LLM response: {e}")
+                        product["deepseek_enriched"] = False
+                else:
+                    logger.warning(f"LLM enrichment failed for: {product.get('name', 'Unknown')}")
                     product["deepseek_enriched"] = False
-            else:
-                logger.warning(f"LLM enrichment failed for: {product.get('name', 'Unknown')}")
-                product["deepseek_enriched"] = False
 
     except Exception as e:
         error_msg = str(e)
@@ -364,70 +364,70 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=normalized_url, config=config_simple)
+            async for result in crawler.arun(url=normalized_url, config=config_simple):
+                # Debug logging
+                logger.debug(f"Extraction result for {url}:")
+                logger.debug(f"  - Success: {result.success}")
+                logger.debug(f"  - Has extracted_content: {bool(result.extracted_content)}")
+                logger.debug(f"  - Extracted content length: {len(result.extracted_content) if result.extracted_content else 0}")
+                
+                if result.extracted_content:
+                    logger.debug(f"  - Extracted content preview: {result.extracted_content[:200]}...")
 
-            # Debug logging
-            logger.debug(f"Extraction result for {url}:")
-            logger.debug(f"  - Success: {result.success}")
-            logger.debug(f"  - Has extracted_content: {bool(result.extracted_content)}")
-            logger.debug(f"  - Extracted content length: {len(result.extracted_content) if result.extracted_content else 0}")
-            
-            if result.extracted_content:
-                logger.debug(f"  - Extracted content preview: {result.extracted_content[:200]}...")
+                if result.success and result.extracted_content:
+                    try:
+                        extracted = json.loads(result.extracted_content)
+                        logger.debug(f"  - Parsed JSON successfully: {list(extracted.keys())}")
 
-            if result.success and result.extracted_content:
-                try:
-                    extracted = json.loads(result.extracted_content)
-                    logger.debug(f"  - Parsed JSON successfully: {list(extracted.keys())}")
+                        # Get product name (required)
+                        product_name = extracted.get("name")
+                        if not product_name:
+                            logger.warning(f"Could not extract product name from URL {url}")
+                            logger.debug(f"  - Available fields: {list(extracted.keys())}")
+                            logger.debug(f"  - Full extracted data: {extracted}")
+                            return None
 
-                    # Get product name (required)
-                    product_name = extracted.get("name")
-                    if not product_name:
-                        logger.warning(f"Could not extract product name from URL {url}")
-                        logger.debug(f"  - Available fields: {list(extracted.keys())}")
-                        logger.debug(f"  - Full extracted data: {extracted}")
+                        # Create base product
+                        product = {
+                            "name": product_name,
+                            "slug": slugify(product_name),
+                            "roaster_id": roaster_id,
+                            "description": extracted.get("description", ""),
+                            "direct_buy_url": url,  # Use original URL for storage
+                            "is_available": True,
+                            "prices": [],
+                            "source": "crawl4ai_extraction",
+                        }
+
+                        # Process price if available
+                        if extracted.get("price"):
+                            price = extracted["price"]
+                            # Default to 250g if no size specified
+                            product["prices"].append({"size_grams": 250, "price": price})
+
+                        # Process extracted fields
+                        _process_extracted_fields(product, extracted)
+
+                        logger.info(f"Successfully extracted product: {product_name}")
+                        return product
+
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse extracted content: {e}")
+                        logger.debug(f"  - Raw extracted content: {result.extracted_content}")
                         return None
 
-                    # Create base product
-                    product = {
-                        "name": product_name,
-                        "slug": slugify(product_name),
-                        "roaster_id": roaster_id,
-                        "description": extracted.get("description", ""),
-                        "direct_buy_url": url,  # Use original URL for storage
-                        "is_available": True,
-                        "prices": [],
-                        "source": "crawl4ai_extraction",
-                    }
-
-                    # Process price if available
-                    if extracted.get("price"):
-                        price = extracted["price"]
-                        # Default to 250g if no size specified
-                        product["prices"].append({"size_grams": 250, "price": price})
-
-                    # Process extracted fields
-                    _process_extracted_fields(product, extracted)
-
-                    logger.info(f"Successfully extracted product: {product_name}")
-                    return product
-
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse extracted content: {e}")
-                    logger.debug(f"  - Raw extracted content: {result.extracted_content}")
-                    return None
-
-            # More detailed failure logging
-            if not result.success:
-                logger.warning(f"Failed to extract product from {url} - crawler failed")
-                logger.debug(f"  - Error details: {getattr(result, 'error', 'No error details')}")
-            elif not result.extracted_content:
-                logger.warning(f"Failed to extract product from {url} - no extracted content")
-                logger.debug(f"  - HTML length: {len(result.html) if result.html else 0}")
-                logger.debug(f"  - Markdown length: {len(result.markdown) if result.markdown else 0}")
-                # Log a snippet of the HTML to see what's available
-                if result.html:
-                    logger.debug(f"  - HTML preview: {result.html[:500]}...")
+                # More detailed failure logging
+                if not result.success:
+                    logger.warning(f"Failed to extract product from {url} - crawler failed")
+                    logger.debug(f"  - Error details: {getattr(result, 'error', 'No error details')}")
+                elif not result.extracted_content:
+                    logger.warning(f"Failed to extract product from {url} - no extracted content")
+                    logger.debug(f"  - HTML length: {len(result.html) if result.html else 0}")
+                    logger.debug(f"  - Markdown length: {len(result.markdown) if result.markdown else 0}")
+                    # Log a snippet of the HTML to see what's available
+                    if result.html:
+                        logger.debug(f"  - HTML preview: {result.html[:500]}...")
+                break  # Exit after first result (success or failure)
             return None
 
     except Exception as e:
