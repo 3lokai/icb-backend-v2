@@ -151,9 +151,9 @@ class RoasterCrawler:
         if url in self.page_cache:
             return self.page_cache[url]
         async with AsyncWebCrawler() as crawler:
-            async for result in crawler.arun(url, config=config):
-                self.page_cache[url] = result
-                return result
+            result = await crawler.arun(url, config=config)
+            self.page_cache[url] = result
+            return result
 
     async def _check_site_status(self, url: str) -> Dict[str, Any]:
         """Check if a website is active and accessible."""
@@ -386,35 +386,35 @@ class RoasterCrawler:
                     crawler_config = CrawlerRunConfig(
                         extraction_strategy=llm_strategy, markdown_generator=md_generator, cache_mode=CacheMode.ENABLED
                     )
-                    async for result in crawler.arun(page_url, config=crawler_config):
-                        if result.success and result.extracted_content:
-                            try:
-                                # Parse the extracted data
-                                data = json.loads(result.extracted_content)
+                    result = await crawler.arun(page_url, config=crawler_config)
 
-                                # Handle different response formats
-                                if isinstance(data, list):
-                                    if data and isinstance(data[0], dict):
-                                        data = data[0]  # Get first item if it's a list of dicts
-                                    else:
-                                        break  # Skip this result if it's not in the expected format
+                    if result.success and result.extracted_content:
+                        try:
+                            # Parse the extracted data
+                            data = json.loads(result.extracted_content)
 
-                                # Only use the data if it's a dictionary with values
-                                if isinstance(data, dict) and data:
-                                    # Check if there are any non-null values
-                                    has_values = False
-                                    for value in data.values():
-                                        if value is not None:
-                                            has_values = True
-                                            break
+                            # Handle different response formats
+                            if isinstance(data, list):
+                                if data and isinstance(data[0], dict):
+                                    data = data[0]  # Get first item if it's a list of dicts
+                                else:
+                                    continue  # Skip this result if it's not in the expected format
 
-                                    if has_values:
-                                        print(f"[LLM] Extracted data from {page_url} using pruned fit_markdown")
-                                        return data
-                            except (json.JSONDecodeError, AttributeError) as e:
-                                print(f"Error parsing LLM result from {page_url}: {str(e)}")
-                                break
-                        break  # Exit after first result
+                            # Only use the data if it's a dictionary with values
+                            if isinstance(data, dict) and data:
+                                # Check if there are any non-null values
+                                has_values = False
+                                for value in data.values():
+                                    if value is not None:
+                                        has_values = True
+                                        break
+
+                                if has_values:
+                                    print(f"[LLM] Extracted data from {page_url} using pruned fit_markdown")
+                                    return data
+                        except (json.JSONDecodeError, AttributeError) as e:
+                            print(f"Error parsing LLM result from {page_url}: {str(e)}")
+                            continue
 
                 except Exception as e:
                     print(f"Error extracting with LLM from {page_url}: {str(e)}")
@@ -453,51 +453,51 @@ class RoasterCrawler:
             for page_url in location_urls:
                 try:
                     crawler_config = CrawlerRunConfig(extraction_strategy=strategy, cache_mode=CacheMode.ENABLED)
-                    async for result in crawler.arun(page_url, config=crawler_config):
-                        if result.success and result.extracted_content:
-                            data = json.loads(result.extracted_content)
-                            if isinstance(data, list) and data:
-                                data = data[0]
+                    result = await crawler.arun(page_url, config=crawler_config)
 
-                                # If we found an address directly, use it
-                                if data.get("address"):
-                                    location_results["address"] = data["address"]
-                                    break
+                    if result.success and result.extracted_content:
+                        data = json.loads(result.extracted_content)
+                        if isinstance(data, list) and data:
+                            data = data[0]
 
-                                # Otherwise, try to extract address patterns from full text
-                                if data.get("full_text"):
-                                    full_text = data["full_text"]
+                            # If we found an address directly, use it
+                            if data.get("address"):
+                                location_results["address"] = data["address"]
+                                break
 
-                                    # Look for address patterns
-                                    address_patterns = [
-                                        r"\d+[,\s]+[\w\s]+(Street|Road|Lane|Avenue|Plaza|Building|Complex|Tower)",
-                                        r"[\w\s]+(Street|Road|Lane|Avenue|Plaza|Building|Complex|Tower)[,\s]+\d+",
-                                        r"PIN\s+\d{6}",
-                                        r"Pincode\s+\d{6}",
-                                        r"Post Code\s+\d{6}",
-                                    ]
+                            # Otherwise, try to extract address patterns from full text
+                            if data.get("full_text"):
+                                full_text = data["full_text"]
 
-                                    for pattern in address_patterns:
-                                        matches = re.finditer(pattern, full_text, re.IGNORECASE)
-                                        for match in matches:
-                                            # Extract the match and some context around it
-                                            start = max(0, match.start() - 50)
-                                            end = min(len(full_text), match.end() + 50)
-                                            context = full_text[start:end]
+                                # Look for address patterns
+                                address_patterns = [
+                                    r"\d+[,\s]+[\w\s]+(Street|Road|Lane|Avenue|Plaza|Building|Complex|Tower)",
+                                    r"[\w\s]+(Street|Road|Lane|Avenue|Plaza|Building|Complex|Tower)[,\s]+\d+",
+                                    r"PIN\s+\d{6}",
+                                    r"Pincode\s+\d{6}",
+                                    r"Post Code\s+\d{6}",
+                                ]
 
-                                            # Clean up the context
-                                            context = re.sub(r"\s+", " ", context).strip()
+                                for pattern in address_patterns:
+                                    matches = re.finditer(pattern, full_text, re.IGNORECASE)
+                                    for match in matches:
+                                        # Extract the match and some context around it
+                                        start = max(0, match.start() - 50)
+                                        end = min(len(full_text), match.end() + 50)
+                                        context = full_text[start:end]
 
-                                            if len(context) > 10 and len(context) < 300:
-                                                location_results["address"] = context
-                                                break
+                                        # Clean up the context
+                                        context = re.sub(r"\s+", " ", context).strip()
 
-                                        if "address" in location_results:
+                                        if len(context) > 10 and len(context) < 300:
+                                            location_results["address"] = context
                                             break
 
-                                if "address" in location_results:
-                                    break
-                        break  # Exit after first result
+                                    if "address" in location_results:
+                                        break
+
+                            if "address" in location_results:
+                                break
 
                 except Exception as e:
                     print(f"Error extracting location with CSS from {page_url}: {str(e)}")
@@ -561,26 +561,26 @@ class RoasterCrawler:
             for page_url in location_urls:
                 try:
                     crawler_config = CrawlerRunConfig(js_code=js_location_extractor, cache_mode=CacheMode.ENABLED)
-                    async for result in crawler.arun(page_url, config=crawler_config):
-                        if result.success and hasattr(result, "js_result") and result.js_result:
-                            try:
-                                # Parse the JavaScript result
-                                js_data = json.loads(result.js_result)
+                    result = await crawler.arun(page_url, config=crawler_config)
 
-                                # Find addresses
-                                if js_data.get("addresses") and isinstance(js_data["addresses"], list):
-                                    for address_text in js_data["addresses"]:
-                                        if isinstance(address_text, str) and len(address_text) > 10:
-                                            location_results["address"] = address_text
-                                            break
+                    if result.success and hasattr(result, "js_result") and result.js_result:
+                        try:
+                            # Parse the JavaScript result
+                            js_data = json.loads(result.js_result)
 
-                                # If we found a good address, no need to check more pages
-                                if location_results.get("address"):
-                                    break
-                            except (json.JSONDecodeError, TypeError) as e:
-                                print(f"Error parsing JS result from {page_url}: {str(e)}")
+                            # Find addresses
+                            if js_data.get("addresses") and isinstance(js_data["addresses"], list):
+                                for address_text in js_data["addresses"]:
+                                    if isinstance(address_text, str) and len(address_text) > 10:
+                                        location_results["address"] = address_text
+                                        break
+
+                            # If we found a good address, no need to check more pages
+                            if location_results.get("address"):
                                 break
-                        break  # Exit after first result
+                        except (json.JSONDecodeError, TypeError) as e:
+                            print(f"Error parsing JS result from {page_url}: {str(e)}")
+                            continue
 
                 except Exception as e:
                     print(f"Error extracting location with JS from {page_url}: {str(e)}")
@@ -597,10 +597,9 @@ class RoasterCrawler:
         else:
             async with AsyncWebCrawler() as crawler:
                 config = CrawlerRunConfig(cache_mode=CacheMode.ENABLED)
-                async for result in crawler.arun(url, config=config):
-                    if hasattr(result, "success") and result.success:
-                        html_content = result.html
-                    break  # Exit after first result
+                result = await crawler.arun(url, config=config)
+                if hasattr(result, "success") and result.success:
+                    html_content = result.html
         # Skip if no HTML content
         if not html_content:
             return roaster_data
