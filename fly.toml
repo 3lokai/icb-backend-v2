@@ -1,7 +1,6 @@
 # fly.toml app configuration file generated for icb-backend-v2 on 2024-12-19T10:00:00Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-
 app = "icb-backend-v2"
 primary_region = "iad"
 
@@ -9,6 +8,11 @@ primary_region = "iad"
 
 [env]
   PORT = "8000"
+  # Playwright specific environment variables
+  PLAYWRIGHT_BROWSERS_PATH = "/ms-playwright"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "false"
+  # Disable Playwright's sandbox for containers
+  PLAYWRIGHT_CHROMIUM_ARGS = "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
 
 [http_service]
   internal_port = 8000
@@ -17,21 +21,26 @@ primary_region = "iad"
   auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
-
+  
   [[http_service.checks]]
-    grace_period = "10s"
-    interval = "30s"
+    grace_period = "30s"  # Increased for slower Playwright startup
+    interval = "60s"      # Less frequent checks
     method = "GET"
-    timeout = "5s"
+    timeout = "10s"       # Increased timeout
     path = "/health"
 
 [[vm]]
   cpu_kind = "shared"
-  cpus = 1
-  memory_mb = 1024
+  cpus = 2              # Bumped from 1 - Playwright needs more juice
+  memory_mb = 2048      # Bumped from 1024 - Chromium is hungry
 
 [deploy]
   release_command = "echo 'Deployment completed'"
 
 [processes]
-  app = "python start_api.py" 
+  app = "python start_api.py"
+
+# Optional: Mount for persistent browser cache
+[[mounts]]
+  source = "playwright_cache"
+  destination = "/ms-playwright"
