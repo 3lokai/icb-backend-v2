@@ -57,7 +57,6 @@ RUN mkdir -p data/input data/output/roasters data/output/products cache
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Expose port
 EXPOSE 8000

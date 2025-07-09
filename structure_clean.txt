@@ -1,21 +1,37 @@
 ./
+    .dockerignore
     .env
     .gitignore
-    ast-analyzer.py
+    
+    api.py
+    API_README.md
     check.py
     config.py
+    curl_examples.sh
+    deploy.bat
+    deploy.sh
+    DEPLOYMENT.md
+    Dockerfile
+    example_usage.py
     file-tree.py
+    fly.toml
     main.py
     project_structure.txt
+    push_to_supabase.py
     pyproject.toml
     README.md
     requirements.txt
     results.json
-    run_all_product_scrapers.py
+    run_full_pipeline.py
     run_product_scraper.py
     run_roaster.py
+    SETUP_ENV.md
+    simple_push.py
+    start_api.py
     structure_clean.txt
-    triage-errors.py
+    test_api.py
+    test_extraction.py
+    test_extraction_debug.html
     ULTIMATE_cleanup_report.md
     __init__.py
     common/
@@ -29,7 +45,10 @@
     db/
         models.py
         supabase.py
+        supabase_functions.sql
         __init__.py
+    debug_html/
+        failed_extraction_https_www.ainmane.com_hardoor-estate.html.html
     field_stability/
         categories.py
         manage_stability.py
@@ -56,6 +75,12 @@
                 llm_extractor.py
                 schema.py
                 __init__.py
+            extractors/
+                attributes.py
+                normalizers.py
+                price.py
+                validators.py
+                __init__.py
             validators/
                 coffee.py
         roaster/
@@ -79,5 +104,3 @@
             __init__.py
     scripts/
         coffee_scraper_prd.md
-        example_prd.txt
-        ruff_tests.md
