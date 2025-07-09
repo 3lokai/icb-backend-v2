@@ -2,14 +2,13 @@
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 app = "icb-backend-v2"
-primary_region = "iad"
+primary_region = "bom"
 
 [build]
 
 [env]
   PORT = "8000"
   # Playwright specific environment variables
-  PLAYWRIGHT_BROWSERS_PATH = "/ms-playwright"
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "false"
   # Disable Playwright's sandbox for containers
   PLAYWRIGHT_CHROMIUM_ARGS = "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
@@ -39,8 +38,3 @@ primary_region = "iad"
 
 [processes]
   app = "python start_api.py"
-
-# Optional: Mount for persistent browser cache
-[[mounts]]
-  source = "playwright_cache"
-  destination = "/ms-playwright"
