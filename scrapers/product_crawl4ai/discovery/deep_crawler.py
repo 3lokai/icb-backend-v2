@@ -128,15 +128,13 @@ async def discover_products_via_crawl4ai(
 
     # Configure content filter for effective extraction
     content_filter = PruningContentFilter(threshold=0.35, threshold_type="dynamic", min_word_threshold=5)
-
     md_generator = DefaultMarkdownGenerator(content_filter=content_filter)
-
     # Create crawler configuration
     config = CrawlerRunConfig(
         deep_crawl_strategy=deep_strategy,
         markdown_generator=md_generator,
         cache_mode=CacheMode.ENABLED,
-        stream=True,  # Process results as they come in
+        stream=True,  # Must be True for async iteration
     )
 
     # Store product URLs for subsequent extraction
@@ -145,7 +143,8 @@ async def discover_products_via_crawl4ai(
     # Run the deep crawler
     async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
         try:
-            async for result in await crawler.arun(url=base_url, config=config):
+            generator = await crawler.arun(url=base_url, config=config)
+            async for result in generator:
                 if not result.success:
                     continue
                 # Check if this appears to be a product page

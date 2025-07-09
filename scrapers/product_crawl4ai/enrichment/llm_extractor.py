@@ -10,6 +10,7 @@ from urllib.parse import urlparse, quote
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig, LLMConfig as Crawl4AILLMConfig
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
+from crawl4ai.models import CrawlResult
 
 from common.utils import slugify
 from config import config
@@ -287,7 +288,7 @@ async def enrich_coffee_product(product: Dict[str, Any], roaster_name: str) -> D
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=normalized_url, config=config_simple)
+            result: CrawlResult = await crawler.arun(url=normalized_url, config=config_simple)
 
             if result.success and result.extracted_content:
                 try:
@@ -364,7 +365,7 @@ async def extract_product_page(url: str, roaster_id: str) -> Optional[Dict[str, 
 
         # Run the crawler
         async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-            result = await crawler.arun(url=normalized_url, config=config_simple)
+            result: CrawlResult = await crawler.arun(url=normalized_url, config=config_simple)
 
             # Debug logging
             logger.debug(f"Extraction result for {url}:")

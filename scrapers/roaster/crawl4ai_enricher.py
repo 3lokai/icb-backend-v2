@@ -11,29 +11,18 @@ from loguru import logger
 
 from config import config
 
-try:
-    from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
-    from crawl4ai import LLMConfig as Crawl4AILLMConfig
-    from crawl4ai.extraction_strategy import LLMExtractionStrategy
-    from pydantic import BaseModel, Field
-except ImportError:
-    AsyncWebCrawler = None
-    CrawlerRunConfig = None
-    Crawl4AILLMConfig = None
-    LLMExtractionStrategy = None
-    BaseModel = object
-
-
-def Field(*a, **k):
-    return None
+from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
+from crawl4ai import LLMConfig as Crawl4AILLMConfig
+from crawl4ai.extraction_strategy import LLMExtractionStrategy
+from pydantic import BaseModel
 
 
 class RoasterEnrichmentData(BaseModel):
-    description: Optional[str] = Field(None, description="About the company or roaster")
-    founded_year: Optional[int] = Field(None, description="Year the company was established")
-    has_subscription: Optional[bool] = Field(None, description="Whether they offer a subscription service")
-    has_physical_store: Optional[bool] = Field(None, description="Whether they have a physical retail location")
-    social_links: Optional[List[str]] = Field(None, description="Social media profile URLs")
+    description: Optional[str] = None
+    founded_year: Optional[int] = None
+    has_subscription: Optional[bool] = None
+    has_physical_store: Optional[bool] = None
+    social_links: Optional[List[str]] = None
 
 
 async def fetch_html(url: str) -> Optional[str]:
@@ -47,7 +36,7 @@ async def fetch_html(url: str) -> Optional[str]:
     return None
 
 
-def find_about_contact_links(soup) -> Dict[str, str]:
+def find_about_contact_links(soup) -> Dict[str, Optional[str]]:
     """Find about/contact page links from a BeautifulSoup object."""
     links = {}
     for a in soup.find_all("a", href=True):
@@ -59,25 +48,27 @@ def find_about_contact_links(soup) -> Dict[str, str]:
     return links
 
 
-async def get_roaster_pages(url: str) -> Dict[str, str]:
+async def get_roaster_pages(url: str) -> Dict[str, Optional[str]]:
     """Return HTML for home, about, and contact pages if available."""
     from bs4 import BeautifulSoup
 
-    pages = {"home": None, "about": None, "contact": None}
+    pages: Dict[str, Optional[str]] = {"home": None, "about": None, "contact": None}
     home_html = await fetch_html(url)
     pages["home"] = home_html
     if home_html:
         soup = BeautifulSoup(home_html, "html.parser")
         links = find_about_contact_links(soup)
         base = url.rstrip("/")
-        if "about" in links:
+        
+        if "about" in links and links["about"]:
             about_url = links["about"]
             if about_url.startswith("/"):
                 about_url = base + about_url
             elif not about_url.startswith("http"):
                 about_url = base + "/" + about_url
             pages["about"] = await fetch_html(about_url)
-        if "contact" in links:
+            
+        if "contact" in links and links["contact"]:
             contact_url = links["contact"]
             if contact_url.startswith("/"):
                 contact_url = base + contact_url
@@ -113,11 +104,11 @@ async def enrich_roaster_data_with_crawl4ai(roaster_data: Dict[str, Any], url: s
         chunk_token_threshold=4000,
         apply_chunking=True,
     )
-    config_obj = CrawlerRunConfig(extraction_strategy=llm_strategy, cache_mode="ENABLED")
+    config_obj = CrawlerRunConfig(extraction_strategy=llm_strategy, cache_mode=CacheMode.ENABLED)
     try:
         async with AsyncWebCrawler() as crawler:
-            result = await crawler.arun(html=html_input, url=url, config=config_obj)
-            if getattr(result, "success", False) and getattr(result, "extracted_content", None):
+            result: Any = await crawler.arun(html=html_input, url=url, config=config_obj)
+            if result and getattr(result, "success", False) and hasattr(result, "extracted_content"):
                 try:
                     enriched_data = json.loads(result.extracted_content)
                     for field in missing_fields:
