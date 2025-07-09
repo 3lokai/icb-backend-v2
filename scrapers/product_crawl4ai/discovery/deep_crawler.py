@@ -143,9 +143,9 @@ async def discover_products_via_crawl4ai(
     # Run the deep crawler
     async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
         try:
-            generator = await crawler.arun(url=base_url, config=config)
-            async for result in generator:
-                if not result.success:
+            results: Any = await crawler.arun(url=base_url, config=config)
+            for result in results:
+                if not result or not result.success:
                     continue
                 # Check if this appears to be a product page
                 if is_product_page(result.url, result.html, result.markdown):
@@ -220,52 +220,43 @@ async def discover_products_via_crawl4ai(
     return products
 
 
-def is_product_page(url: str, html: str, markdown: str) -> bool:
-    """
-    More robust general-purpose product page detection that works across platforms.
-    Effectively identifies product pages regardless of URL structure.
-    """
-    # First, check for common product page indicators in the HTML structure
-    product_indicators = 0
-
-    # 1. Check for product schema markup (very reliable)
-    if re.search(r'itemtype=[\'"](http:|https:)?//schema.org/Product[\'"]', html):
-        product_indicators += 2  # This is a strong indicator
-
-    # 2. Check for pricing patterns
-    price_patterns = [
+# Precompile regex patterns for better performance
+PRODUCT_SCHEMA_PATTERN = re.compile(r'itemtype=[\'"](http:|https:)?//schema.org/Product[\'"]')
+PRICE_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in [
         r'<[^>]*class="[^"]*price[^"]*"',
         r'<[^>]*itemprop="price"',
         r"[$€₹]\s*\d+\.?\d*",
         r'price"?:\s*["\']\d+',
         r"data-product-price",
     ]
-    if any(re.search(pattern, html, re.IGNORECASE) for pattern in price_patterns):
-        product_indicators += 1
-
-    # 3. Check for "Add to cart" or similar buttons
-    cart_patterns = [r"add[_ -]to[_ -]cart", r"add[_ -]to[_ -]bag", r"buy[_ -]now", r"purchase", r"checkout"]
-    if any(re.search(pattern, html, re.IGNORECASE) for pattern in cart_patterns):
-        product_indicators += 1
-
-    # 4. Check for product detail elements
-    detail_patterns = [
+]
+CART_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in [
+        r"add[_ -]to[_ -]cart",
+        r"add[_ -]to[_ -]bag",
+        r"buy[_ -]now",
+        r"purchase",
+        r"checkout"
+    ]
+]
+DETAIL_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in [
         r'<[^>]*id="[^"]*product[_ -]detail',
         r'<[^>]*class="[^"]*product[_ -]detail',
         r'<[^>]*class="[^"]*product[_ -]info',
         r'<[^>]*id="[^"]*product[_ -]description',
         r'<[^>]*class="[^"]*product[_ -]image',
     ]
-    if any(re.search(pattern, html, re.IGNORECASE) for pattern in detail_patterns):
-        product_indicators += 1
-
-    # 5. Check for product options (variants, sizes, etc.)
-    option_patterns = [r"<select[^>]*>.*?</select>", r'<input[^>]*type=["|\']radio["|\'][^>]*>']
-    if any(re.search(pattern, html, re.DOTALL | re.IGNORECASE) for pattern in option_patterns):
-        product_indicators += 1
-
-    # 6. Check for coffee-specific indicators
-    coffee_patterns = [
+]
+OPTION_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE | re.DOTALL) for pattern in [
+        r"<select[^>]*>.*?</select>",
+        r'<input[^>]*type=["|\']radio["|\'][^>]*>'
+    ]
+]
+COFFEE_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in [
         r"roast level",
         r"origin",
         r"bean type",
@@ -278,12 +269,9 @@ def is_product_page(url: str, html: str, markdown: str) -> bool:
         r"altitude",
         r"brewing",
     ]
-    coffee_matches = sum(1 for pattern in coffee_patterns if re.search(pattern, html, re.IGNORECASE))
-    if coffee_matches >= 2:
-        product_indicators += 1
-
-    # 7. Look for product structure in URL (as a supporting factor)
-    url_patterns = [
+]
+URL_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in [
         r"/product/",
         r"/products/",
         r"/coffee/",
@@ -294,30 +282,63 @@ def is_product_page(url: str, html: str, markdown: str) -> bool:
         r"/item/",
         r"/buy/",
     ]
-    if any(re.search(pattern, url, re.IGNORECASE) for pattern in url_patterns):
+]
+TITLE_PATTERN = re.compile(r"<h1[^>]*>([^<]+)</h1>")
+ALT_TITLE_PATTERN = re.compile(r"<title>([^<|]+)")
+DESC_PATTERN = re.compile(r'<meta\s+name=["|\']description["|\'][^>]*content=["|\']([^"\']+)["|\'"]')
+
+def is_product_page(url: str, html: str, markdown: str) -> bool:
+    """
+    More robust general-purpose product page detection that works across platforms.
+    Effectively identifies product pages regardless of URL structure.
+    """
+    product_indicators = 0
+
+    # 1. Check for product schema markup (very reliable)
+    if PRODUCT_SCHEMA_PATTERN.search(html):
+        product_indicators += 2
+
+    # 2. Check for pricing patterns
+    if any(pattern.search(html) for pattern in PRICE_PATTERNS):
+        product_indicators += 1
+
+    # 3. Check for "Add to cart" or similar buttons
+    if any(pattern.search(html) for pattern in CART_PATTERNS):
+        product_indicators += 1
+
+    # 4. Check for product detail elements
+    if any(pattern.search(html) for pattern in DETAIL_PATTERNS):
+        product_indicators += 1
+
+    # 5. Check for product options (variants, sizes, etc.)
+    if any(pattern.search(html) for pattern in OPTION_PATTERNS):
+        product_indicators += 1
+
+    # 6. Check for coffee-specific indicators
+    coffee_matches = sum(1 for pattern in COFFEE_PATTERNS if pattern.search(html))
+    if coffee_matches >= 2:
+        product_indicators += 1
+
+    # 7. Look for product structure in URL
+    if any(pattern.search(url) for pattern in URL_PATTERNS):
         product_indicators += 1
 
     # Consider it a product page if multiple indicators are found
-    is_product = product_indicators >= 3  # Require stronger evidence
+    if product_indicators < 3:
+        return False
 
-    # If it looks like a product page, check if it's likely a coffee product
-    if is_product:
-        # Extract potential product name from HTML
-        product_name = ""
+    # Extract product name from title or h1
+    title_match = TITLE_PATTERN.search(html) or ALT_TITLE_PATTERN.search(html)
+    if not title_match:
+        return False
+    
+    product_name = title_match.group(1).strip()
+    
+    # Extract description
+    description = ""
+    desc_match = DESC_PATTERN.search(html)
+    if desc_match:
+        description = desc_match.group(1).strip()
 
-        # Try to find product name in title or h1 element
-        title_match = re.search(r"<h1[^>]*>([^<]+)</h1>", html) or re.search(r"<title>([^<|]+)", html)
-        if title_match:
-            product_name = title_match.group(1).strip()
-
-        # Extract description snippet
-        description = ""
-        desc_match = re.search(r'<meta\s+name=["|\']description["|\'][^>]*content=["|\']([^"\']+)["|\'"]', html)
-        if desc_match:
-            description = desc_match.group(1).strip()
-
-        # If we have a product name, use the coffee validator
-        if product_name:
-            return validate_product_at_discovery(name=product_name, description=description, url=url)
-
-    return is_product
+    # Validate as coffee product
+    return validate_product_at_discovery(name=product_name, description=description, url=url)
