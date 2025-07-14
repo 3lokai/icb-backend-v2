@@ -356,15 +356,15 @@ def standardize_woocommerce_product(
             # Handle WooCommerce-specific attribute mappings
             if attr_value:
                 if any(term in attr_name for term in ["varietal", "varietals", "cultivar", "bean varietals"]):
-                    options = attr.get("options", [])
-                    if options and isinstance(options, list):
-                        product["varietals"] = [str(opt).strip() for opt in options if str(opt).strip()]
-                    elif isinstance(attr_value, str):
-                        product["varietals"] = [v.strip() for v in attr_value.split(",") if v.strip()]
-                    elif isinstance(attr_value, list):
-                        product["varietals"] = [str(v).strip() for v in attr_value if str(v).strip()]
-                    elif attr_value is not None:
-                        product["varietals"] = [str(attr_value).strip()]
+                    raw_varietals = attr_value
+                    if isinstance(raw_varietals, str):
+                        product["varietals"] = [v.strip() for v in raw_varietals.split(",") if v.strip()]
+                    elif isinstance(raw_varietals, list):
+                        product["varietals"] = [str(v).strip() for v in raw_varietals if str(v).strip()]
+                    elif raw_varietals is not None:  # Handle any other non-None type
+                        product["varietals"] = [str(raw_varietals).strip()] if str(raw_varietals).strip() else None
+                    else:
+                        product["varietals"] = None
                 elif any(term in attr_name for term in ["altitude", "elevation", "grown at", "masl"]):
                     product["altitude_meters"] = _parse_altitude_string(attr_value)
                 # Extract flavor notes
@@ -413,10 +413,15 @@ def standardize_woocommerce_product(
         # Note: boolean directly from regex match is not typical, usually string
 
     if product.get("varietals") is None and tag_extracted_attrs.get("varietals"):
-        raw_varietals_from_tag = tag_extracted_attrs["varietals"]
-        if isinstance(raw_varietals_from_tag, str):
-            product["varietals"] = [v.strip() for v in raw_varietals_from_tag.split(",") if v.strip()]
-        # Tags are unlikely to provide a list directly, usually string.
+        raw_varietals = tag_extracted_attrs["varietals"]
+        if isinstance(raw_varietals, str):
+            product["varietals"] = [v.strip() for v in raw_varietals.split(",") if v.strip()]
+        elif isinstance(raw_varietals, list):
+            product["varietals"] = [str(v).strip() for v in raw_varietals if str(v).strip()]
+        elif raw_varietals is not None:  # Handle any other non-None type
+            product["varietals"] = [str(raw_varietals).strip()] if str(raw_varietals).strip() else None
+        else:
+            product["varietals"] = None
 
     if product.get("altitude_meters") is None and tag_extracted_attrs.get("altitude_meters"):
         product["altitude_meters"] = _parse_altitude_string(tag_extracted_attrs["altitude_meters"])

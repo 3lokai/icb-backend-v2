@@ -365,7 +365,7 @@ class RoasterCrawler:
 
         # Define the LLM extraction strategy
         llm_strategy = LLMExtractionStrategy(
-            llm_config=LLMConfig(provider="deepseek", api_token=app_config.llm.deepseek_api_key),
+            llm_config=LLMConfig(provider="deepseek/deepseek-chat", api_token=app_config.llm.deepseek_api_key, base_url="https://api.deepseek.com"),
             schema=ROASTER_LLM_SCHEMA,
             extraction_type="schema",
             instruction=ROASTER_LLM_INSTRUCTIONS,
@@ -386,7 +386,7 @@ class RoasterCrawler:
                     crawler_config = CrawlerRunConfig(
                         extraction_strategy=llm_strategy, markdown_generator=md_generator, cache_mode=CacheMode.ENABLED
                     )
-                    result = await crawler.arun(page_url, config=crawler_config)
+                    result:Any = await crawler.arun(page_url, config=crawler_config)
 
                     if result.success and result.extracted_content:
                         try:
@@ -453,7 +453,7 @@ class RoasterCrawler:
             for page_url in location_urls:
                 try:
                     crawler_config = CrawlerRunConfig(extraction_strategy=strategy, cache_mode=CacheMode.ENABLED)
-                    result = await crawler.arun(page_url, config=crawler_config)
+                    result:Any = await crawler.arun(page_url, config=crawler_config)
 
                     if result.success and result.extracted_content:
                         data = json.loads(result.extracted_content)
@@ -561,7 +561,7 @@ class RoasterCrawler:
             for page_url in location_urls:
                 try:
                     crawler_config = CrawlerRunConfig(js_code=js_location_extractor, cache_mode=CacheMode.ENABLED)
-                    result = await crawler.arun(page_url, config=crawler_config)
+                    result:Any = await crawler.arun(page_url, config=crawler_config)
 
                     if result.success and hasattr(result, "js_result") and result.js_result:
                         try:
@@ -597,7 +597,7 @@ class RoasterCrawler:
         else:
             async with AsyncWebCrawler() as crawler:
                 config = CrawlerRunConfig(cache_mode=CacheMode.ENABLED)
-                result = await crawler.arun(url, config=config)
+                result:Any = await crawler.arun(url, config=config)
                 if hasattr(result, "success") and result.success:
                     html_content = result.html
         # Skip if no HTML content

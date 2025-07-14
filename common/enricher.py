@@ -24,8 +24,8 @@ class EnrichmentService:
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None) -> None:
         """Initialize the enrichment service."""
-        self.api_key = api_key or config.llm.deepseek_api_key
-        self.model = model or "deepseek-chat"
+        self.api_key = config.llm.deepseek_api_key
+        self.model = "deepseek/deepseek-chat"
         self.base_url = "https://api.deepseek.com"
         self.enabled = bool(self.api_key)
 

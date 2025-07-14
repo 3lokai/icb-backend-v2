@@ -303,7 +303,7 @@ async def scrape_endpoint(request: ScrapeRequest):
     if "roaster" in request.options and "products" in request.options:
         # Both requested - need both to succeed
         roaster_success = response.roaster_data is not None
-        products_success = len(response.products_data) > 0 or not products_errors
+        products_success = len(response.products_data) > 0 or not response.errors
         response.success = roaster_success and products_success
     elif "roaster" in request.options:
         # Only roaster requested
@@ -331,4 +331,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         log_level="info"
-    ) 
+    )

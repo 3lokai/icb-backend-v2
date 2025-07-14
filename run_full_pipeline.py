@@ -20,9 +20,7 @@ Options:
 """
 
 import argparse
-import asyncio
 import csv
-import json
 import subprocess
 import sys
 import time

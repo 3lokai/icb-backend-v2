@@ -1,35 +1,27 @@
 [
-    
   {
-    "name": "Baba's Beans",
-    "website_url": "https://babasbeanscoffee.com/",
-    "slug": "babas-beans",
-    "platform": "woocommerce",
-    "logo_url": "https://babasbeanscoffee.com/wp-content/uploads/2021/09/cropped-New-Project-32x32.png",
-    "has_subscription": true,
-    "has_physical_store": true,
-    "description": "About us Handpicked for the nuances they reveal to us upon being roasted to perfection, highlighting the personalities of the bean in the cup. It is Jazz in a cup; when the quartet of acidity, body, flavor and aroma of our coffees orchestrate a symphony for your senses! Indian soil is well endowed to birth brilliance. Our vision is to optimize the agricultural potential of coffee as a crop for our domestic consumer. From being region specific to estate specific, our coffees are exquisitely selected from the best coffee growing regions of India. Our Current selections are sourced from High Elevation lush coffee estates of Coorg & Chikmagalur, Karnataka.",
+    "name": "Grey Soul Coffee",
+    "website_url": "https://greysoul.coffee",
+    "slug": "grey-soul-coffee",
     "country": "India",
+    "is_active": true,
+    "is_verified": false,
+    "domain": "greysoul.coffee",
+    "platform": "shopify",
+    "description": "Grey Soul Coffee Roasters is a specialty coffee roaster located in Pune, India, known for serving freshly roasted Indian Specialty Arabica. They offer an all-day dining menu with vegetarian, vegan, and gluten-free options, along with handmade sensory stonewares and coffee brewing equipment. The roastery also features a coffee experience center where customers can witness live coffee roasting and explore the nuances of specialty coffee.",
+    "has_physical_store": true,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "address": "Lane 6, Koregaon Park, Pune",
+    "error": false,
     "tags": [
       "specialty",
       "organic",
-      "single-origin",
       "local",
       "arabica",
-      "robusta",
       "subscription",
-      "woocommerce"
+      "shopify"
     ],
-    "social_links": [
-      "https://www.facebook.com/babasbeanscoffeebar/",
-      "https://twitter.com/beansbaba",
-      "https://www.linkedin.com/company/baba's-beans/about/",
-      "https://www.instagram.com/babasbeans/"
-    ],
-    "contact_email": "info@babasbeans.com",
-    "contact_phone": "9870401520",
-    "instagram_handle": "babasbeans",
-    "is_active": true,
-    "is_verified": false
+    "has_subscription": true
   }
 ]

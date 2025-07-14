@@ -8,7 +8,6 @@ This script demonstrates how to use the API from Python code.
 import asyncio
 import json
 import httpx
-from typing import Dict, Any
 
 # API configuration
 API_BASE_URL = "http://localhost:8000"

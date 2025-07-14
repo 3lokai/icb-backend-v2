@@ -430,7 +430,7 @@ def get_llm_config() -> Crawl4AILLMConfig:
 
     deepseek_key = config.llm.deepseek_api_key
     if deepseek_key:
-        return Crawl4AILLMConfig(provider="deepseek", api_token=deepseek_key)
+        return Crawl4AILLMConfig(provider="deepseek/deepseek-chat", api_token=deepseek_key, base_url="https://api.deepseek.com")
 
     logger.warning("No LLM API keys found. Extraction will fail.")
     return Crawl4AILLMConfig(provider="openai/gpt-4o-mini", api_token="openai_key")

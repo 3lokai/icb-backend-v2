@@ -437,7 +437,7 @@ def _is_seasonal_product(tags: List[str], description: str, name: str) -> bool:
     return False
 
 
-def extract_attribute(shopify_product: Dict[str, Any], field_name: str, possible_keys: List[str]) -> Optional[str]:
+def extract_attribute(shopify_product: Dict[str, Any], field_name: str, possible_keys: List[str]) -> Union[str, List[str], None]:
     """
     Extract attribute value from Shopify product metafields or options.
 

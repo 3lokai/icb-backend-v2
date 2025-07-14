@@ -10,7 +10,7 @@ Usage Examples:
     python run_roaster.py --input my_roasters.csv --output results.json --limit 10
 
     # Single roaster mode
-    python run_roaster.py --single --input "Blue Tokai,https://bluetokai.com"
+    python run_roaster.py --single --input "Blue Tokai,https://bluetokaicoffee.com"
 
     # High-performance settings
     python run_roaster.py --concurrency 10 --rate-limit 20 --rate-period 30

@@ -61,12 +61,26 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from typing import List, Union
+from urllib.parse import urlparse
 
 from loguru import logger
 
 from scrapers.product_crawl4ai.extractors.normalizers import standardize_coffee_model
 from scrapers.product_crawl4ai.extractors.validators import apply_validation_corrections, validate_coffee_product
 from scrapers.product_crawl4ai.scraper import ProductScraper
+
+
+def to_json_serializable(obj) -> dict:
+    """Convert Pydantic model to JSON-serializable dict."""
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump(mode="json")
+    elif hasattr(obj, "dict"):
+        return obj.dict()
+    elif isinstance(obj, dict):
+        return obj
+    else:
+        return obj
 
 
 async def main():
@@ -89,8 +103,6 @@ async def main():
     batch_parser.add_argument("--no-confidence", action="store_true", help="Disable confidence tracking")
     batch_parser.add_argument("--analyze", action="store_true", help="Generate field coverage analysis report")
     batch_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-
-    # Add roaster link argument
     batch_parser.add_argument("--roaster-link", help="Roaster link to scrape")
 
     # Single URL scraper command
@@ -111,12 +123,10 @@ async def main():
     args = parser.parse_args()
 
     # Enable debug logging if requested
-    if args.debug:
-        # Remove default handler and add debug handler
+    if hasattr(args, 'debug') and args.debug:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG", format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <level>{message}</level>")
         
-        # Also set the standard logging level to DEBUG for imported modules
         import logging
         logging.getLogger().setLevel(logging.DEBUG)
         for name in logging.root.manager.loggerDict:
@@ -135,7 +145,6 @@ async def main():
     elif args.command == "url":
         return await scrape_single_url(args)
     elif args.command == "validate":
-        # Handle validation command (this is not async)
         return validate_products(args)
     else:
         parser.print_help()
@@ -153,15 +162,13 @@ async def scrape_roasters(args):
             logger.error(f"Invalid roaster data format in {args.roasters}. Expected a list.")
             return 1
 
-        # Apply limit if specified
+        # Apply filters
         if args.limit:
-            roasters = roasters[: args.limit]
+            roasters = roasters[:args.limit]
 
-        # Filter by platform if specified
         if args.platform:
             roasters = [r for r in roasters if r.get("platform") == args.platform]
 
-        # Filter by roaster ID if specified
         if args.roaster_id:
             roasters = [r for r in roasters if r.get("id") == args.roaster_id or r.get("slug") == args.roaster_id]
 
@@ -169,8 +176,8 @@ async def scrape_roasters(args):
 
         # Initialize product scraper
         product_scraper = ProductScraper()
-
         all_products = []
+
         for roaster in roasters:
             try:
                 roaster_id = roaster.get("id", roaster.get("slug", "unknown"))
@@ -183,7 +190,7 @@ async def scrape_roasters(args):
 
                 logger.info(f"Scraping products for {roaster_name} ({website_url})")
 
-                # Scrape products for this roaster
+                # Scrape products (returns list of Pydantic models)
                 products = await product_scraper.scrape_products(
                     roaster_id=roaster_id,
                     url=website_url,
@@ -192,17 +199,8 @@ async def scrape_roasters(args):
                     use_enrichment=not args.no_enrichment,
                 )
 
-                # Convert to dict for JSON serialization
-                product_dicts = []
-                for product in products:
-                    if hasattr(product, "model_dump"):
-                        product_dicts.append(product.model_dump(mode="json"))
-                    elif hasattr(product, "dict"):
-                        product_dicts.append(product.dict())
-                    else:
-                        product_dicts.append(product)
-
-                all_products.extend(product_dicts)
+                # Keep as Pydantic models, only convert when saving
+                all_products.extend(products)
                 logger.info(f"Found {len(products)} products for {roaster_name}")
 
             except Exception as e:
@@ -214,20 +212,15 @@ async def scrape_roasters(args):
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
         if args.export_format == "json":
-            # Convert all products to plain dicts for JSON serialization
-            def to_primitive(obj):
-                if hasattr(obj, "model_dump"):
-                    return obj.model_dump(mode="json")
-                elif hasattr(obj, "dict"):
-                    return obj.dict()
-                return obj
-            all_products_primitive = [to_primitive(p) for p in all_products]
+            # Convert to JSON-serializable format only when saving
+            json_data = [to_json_serializable(product) for product in all_products]
             with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(all_products_primitive, f, indent=2, ensure_ascii=False)
+                json.dump(json_data, f, indent=2, ensure_ascii=False)
         else:  # CSV
             from common.exporter import export_to_csv
-
-            export_to_csv(all_products, str(output_path))
+            # Convert to dicts for CSV export
+            csv_data = [to_json_serializable(product) for product in all_products]
+            export_to_csv(csv_data, str(output_path))
 
         logger.info(f"Scraped {len(all_products)} total products")
         logger.info(f"Saved to {args.output}")
@@ -251,43 +244,36 @@ async def scrape_roasters(args):
 async def scrape_single_url(args):
     """Scrape a single product URL."""
     try:
-        # Initialize product scraper
         product_scraper = ProductScraper()
-
         logger.info(f"Scraping single product: {args.url}")
 
-        # Scrape the single product
+        # Scrape the single product (returns Pydantic model)
         product = await product_scraper.scrape_single_product(
-            product_url=args.url, roaster_id=args.roaster_id, roaster_name=args.roaster_name
+            product_url=args.url, 
+            roaster_id=args.roaster_id, 
+            roaster_name=args.roaster_name
         )
 
         if not product:
             logger.error(f"Failed to scrape product from {args.url}")
             return 1
 
-        # Convert to dict for JSON serialization
-        if hasattr(product, "model_dump"):
-            product_dict = product.model_dump(mode="json")
-        elif hasattr(product, "dict"):
-            product_dict = product.dict()
-        else:
-            product_dict = product
+        # Use direct attribute access on Pydantic model
+        logger.info(f"Successfully scraped product: {product.name}")
+        logger.info(f"Saved to {args.output}")
 
-        # Save result
+        # Save to file (convert to JSON only here)
         output_path = Path(args.output)
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump([product_dict], f, indent=2, ensure_ascii=False)
+            json.dump([to_json_serializable(product)], f, indent=2, ensure_ascii=False)
 
-        logger.info(f"Successfully scraped product: {product_dict.get('name', 'Unknown')}")
-        logger.info(f"Saved to {args.output}")
-
-        # Print summary
+        # Print summary with direct attribute access
         print("\n" + "=" * 60)
         print("SINGLE PRODUCT SCRAPER SUMMARY")
         print("=" * 60)
-        print(f"Product: {product_dict.get('name', 'Unknown')}")
+        print(f"Product: {product.name}")
         print(f"Roaster: {args.roaster_name}")
         print(f"URL: {args.url}")
         print(f"Output file: {args.output}")
@@ -302,13 +288,23 @@ async def scrape_single_url(args):
 
 async def scrape_roaster_link(args):
     """Scrape roaster information from a link and then scrape products."""
-    from scrapers.roaster.scraper import RoasterScraper  # Import here to avoid circular dependency
+    from scrapers.roasters_crawl4ai.crawler import RoasterCrawler
 
-    roaster_scraper = RoasterScraper()
+    roaster_crawler = RoasterCrawler()
 
     try:
-        # Scrape roaster information
-        roaster = await roaster_scraper.scrape_roaster(args.roaster_link)
+        # Extract name from URL
+        roaster_name = "Unknown Roaster"
+        roaster_url = args.roaster_link
+        
+        parsed_url = urlparse(roaster_url)
+        if parsed_url.netloc:
+            domain_parts = parsed_url.netloc.replace('www.', '').split('.')
+            if domain_parts:
+                roaster_name = domain_parts[0].replace('-', ' ').replace('_', ' ').title()
+
+        # Extract roaster info (returns Pydantic model)
+        roaster = await roaster_crawler.extract_roaster(roaster_name, roaster_url)
 
         if not roaster:
             logger.error(f"Failed to scrape roaster from {args.roaster_link}")
@@ -317,36 +313,26 @@ async def scrape_roaster_link(args):
         # Initialize product scraper
         product_scraper = ProductScraper()
 
-        # Scrape products for the roaster
+        # Use direct attribute access on Pydantic roaster model
         products = await product_scraper.scrape_products(
-            roaster_id=roaster.get("id", roaster.get("slug", "unknown")),
-            url=roaster.get("website_url", args.roaster_link),
-            roaster_name=roaster.get("name", "Unknown"),
+            roaster_id=roaster.get("roaster_id") or args.roaster_id,
+            url=roaster.get("website_url") or args.roaster_link,
+            roaster_name=roaster.get("name") or roaster_name,
             force_refresh=args.force_refresh,
             use_enrichment=not args.no_enrichment,
         )
 
-        # Convert to dict for JSON serialization
-        product_dicts = []
-        for product in products:
-            if hasattr(product, "model_dump"):
-                product_dicts.append(product.model_dump(mode="json"))
-            elif hasattr(product, "dict"):
-                product_dicts.append(product.dict())
-            else:
-                product_dicts.append(product)
-
-        # Prepare output path
+        # Save products (convert to JSON only when saving)
         output_path = Path(args.output)
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
-        # Save products to file
+        json_data = [to_json_serializable(product) for product in products]
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(product_dicts, f, indent=2, ensure_ascii=False)
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Scraped {len(products)} products from {args.roaster_link}")
 
-        # Print summary
+        # Print summary with direct attribute access
         print("\n" + "=" * 60)
         print("COFFEE PRODUCT SCRAPER SUMMARY")
         print("=" * 60)
@@ -380,20 +366,19 @@ def validate_products(args):
         for product in products:
             # Standardize model
             standardized = standardize_coffee_model(product)
-
+            
             # Validate fields
             validation_results = validate_coffee_product(standardized)
             fixed = apply_validation_corrections(standardized, validation_results)
-
+            
             fixed_products.append(fixed)
 
-        # Determine output path
-        output_path = args.output if args.output else args.input
-
         # Save output
-        fixed_products_primitive = [p if not hasattr(p, "model_dump") else p.model_dump(mode="json") for p in fixed_products]
+        output_path = args.output if args.output else args.input
+        json_data = [to_json_serializable(product) for product in fixed_products]
+        
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(fixed_products_primitive, f, indent=2, ensure_ascii=False)
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Validated and fixed {len(fixed_products)} products")
         logger.info(f"Saved to {output_path}")
